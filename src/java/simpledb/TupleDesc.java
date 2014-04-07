@@ -8,6 +8,8 @@ import java.util.*;
  */
 public class TupleDesc implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+    
     /**
      * A help class to facilitate organizing the information of each field
      * */
@@ -35,7 +37,7 @@ public class TupleDesc implements Serializable {
         }
     }
 
-    private List<TDItem> tupleList;
+    private List<TDItem> tupleDescList;
     
     /**
      * @return
@@ -43,11 +45,9 @@ public class TupleDesc implements Serializable {
      *        that are included in this TupleDesc
      * */
     public Iterator<TDItem> iterator() {
-    	Iterator<TDItem> it = tupleList.iterator();
+    	Iterator<TDItem> it = tupleDescList.iterator();
         return it;
     }
-
-    private static final long serialVersionUID = 1L;
 
     /**
      * Create a new TupleDesc with typeAr.length fields with fields of the
@@ -61,9 +61,9 @@ public class TupleDesc implements Serializable {
      *            be null.
      */
     public TupleDesc(Type[] typeAr, String[] fieldAr) {
-        tupleList = new ArrayList<TDItem>();
+        tupleDescList = new ArrayList<TDItem>();
         for(int i = 0; i < typeAr.length; i++)
-        	tupleList.add(new TDItem(typeAr[i], fieldAr[i]));
+        	tupleDescList.add(new TDItem(typeAr[i], fieldAr[i]));
     }
 
     /**
@@ -75,16 +75,16 @@ public class TupleDesc implements Serializable {
      *            TupleDesc. It must contain at least one entry.
      */
     public TupleDesc(Type[] typeAr) {
-    	tupleList = new ArrayList<TDItem>();
+    	tupleDescList = new ArrayList<TDItem>();
         for(Type element : typeAr)
-        	tupleList.add(new TDItem(element, null));
+        	tupleDescList.add(new TDItem(element, null));
     }
 
     /**
      * @return the number of fields in this TupleDesc
      */
     public int numFields() {
-        return tupleList.size(); 
+        return tupleDescList.size(); 
     }
 
     /**
@@ -97,10 +97,10 @@ public class TupleDesc implements Serializable {
      *             if i is not a valid field reference.
      */
     public String getFieldName(int i) throws NoSuchElementException {
-        if(i < 0 || i >= tupleList.size())
+        if(i < 0 || i >= tupleDescList.size())
         	throw new NoSuchElementException("Invalid index");
         else
-        	return tupleList.get(i).fieldName;
+        	return tupleDescList.get(i).fieldName;
     }
 
     /**
@@ -114,10 +114,10 @@ public class TupleDesc implements Serializable {
      *             if i is not a valid field reference.
      */
     public Type getFieldType(int i) throws NoSuchElementException {
-    	if(i < 0 || i >= tupleList.size())
+    	if(i < 0 || i >= tupleDescList.size())
         	throw new NoSuchElementException("Invalid index");
         else
-        	return tupleList.get(i).fieldType;
+        	return tupleDescList.get(i).fieldType;
     }
 
     /**
@@ -130,9 +130,9 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
-        for(TDItem element : tupleList){
+        for(TDItem element : tupleDescList){
         	if(element.fieldName.equals(name))
-        		return tupleList.indexOf(element);
+        		return tupleDescList.indexOf(element);
         }
         
         throw new NoSuchElementException("Matching name: \"" + name + "\" NOT FOUND");
@@ -144,7 +144,7 @@ public class TupleDesc implements Serializable {
      */
     public int getSize() {
        int totalSize = 0;
-       for(TDItem element : tupleList){
+       for(TDItem element : tupleDescList){
     	   totalSize += element.fieldType.getLen();
        }
        return totalSize;
@@ -224,10 +224,9 @@ public class TupleDesc implements Serializable {
     public String toString() {
         String result = "";
         for(int i = 0; i < this.numFields(); i++){
-        	result += tupleList.get(i).fieldType + "[" + i + "]"
-        			  + "(" + tupleList.get(i).fieldName + "[" + i + "]), ";
+        	result += tupleDescList.get(i).fieldType + "[" + i + "]"
+        			+ "(" + tupleDescList.get(i).fieldName + "[" + i + "]), ";
         }
-        
         return result.substring(0, result.length() - 2);
     }
 }
