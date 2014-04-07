@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * <p>
  * Provides a set of methods that can be used to access these variables from
  * anywhere.
- * 
+ * </p>
  * @Threadsafe
  */
 public class Database {

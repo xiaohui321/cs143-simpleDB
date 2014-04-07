@@ -130,12 +130,14 @@ public class TupleDesc implements Serializable {
      *             if no field with a matching name is found.
      */
     public int fieldNameToIndex(String name) throws NoSuchElementException {
-        for(TDItem element : tupleDescList){
-        	if(element.fieldName.equals(name))
+
+        for(TDItem element : tupleDescList){       	
+        	if(element.fieldName != null && element.fieldName.equals(name)){
         		return tupleDescList.indexOf(element);
+        	}
         }
         
-        throw new NoSuchElementException("Matching name: \"" + name + "\" NOT FOUND");
+        throw new NoSuchElementException("no field found with that name");
     }
 
     /**
