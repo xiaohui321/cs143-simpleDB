@@ -48,20 +48,18 @@ public class Catalog {
 	 *            added as the table for a given name.
 	 * 
 	 * @param pkeyField
-	 *            the name of the primary key field
+	 *           the name of the primary key field
 	 */
-	public void addTable(final DbFile file, final String name,
-			final String pkeyField) {
-		table2file.put(new Table(name, pkeyField, file.getId()), file);	
+	public void addTable(final DbFile file, final String name, final String pkeyField) {
+		tableList.add(new Table(name, pkeyField, file));	
 	}
 
 	public void addTable(final DbFile file, final String name) {
-			addTable(file, name, "");
-		
+		addTable(file, name, "");
 	}
 
 	public List<Table> getAllTables(){
-		//TODO: some codes here
+		return tableList;
 	}
 	/**
 	 * Add a new table to the catalog. This table has tuples formatted using the
@@ -83,7 +81,7 @@ public class Catalog {
 	 *             if the table doesn't exist
 	 */
 	public int getTableId(final String name) throws NoSuchElementException {
-		for(Table t: table2file.keySet()){
+		for(Table t: tableList.keySet()){
 			if(t.getname().equals(name))
 				return t.getid();
 		}
@@ -115,9 +113,9 @@ public class Catalog {
 	 */
 	public DbFile getDatabaseFile(final int tableid)
 			throws NoSuchElementException {
-		for(Table t: table2file.keySet()){
+		for(Table t: tableList.keySet()){
 			if(t.getid()==tableid)
-				return table2file.get(t);
+				return tableList.get(t);
 		}
 		throw new NoSuchElementException("No such DbFile with id"+tableid);
 	}
