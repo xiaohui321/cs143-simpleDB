@@ -5,7 +5,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -19,11 +22,15 @@ import java.util.UUID;
  */
 public class Catalog {
 
+	//Member fields
+	private List<Table> tableList;
+	
+	
 	/**
 	 * Constructor. Creates a new, empty catalog.
 	 */
 	public Catalog() {
-
+		tableList = new ArrayList<Table>();     
 	}
 
 	/**
@@ -45,13 +52,17 @@ public class Catalog {
 	 */
 	public void addTable(final DbFile file, final String name,
 			final String pkeyField) {
-		// some code goes here
+		table2file.put(new Table(name, pkeyField, file.getId()), file);	
 	}
 
 	public void addTable(final DbFile file, final String name) {
-		addTable(file, name, "");
+			addTable(file, name, "");
+		
 	}
 
+	public List<Table> getAllTables(){
+		//TODO: some codes here
+	}
 	/**
 	 * Add a new table to the catalog. This table has tuples formatted using the
 	 * specified TupleDesc and its contents are stored in the specified DbFile.
@@ -72,8 +83,12 @@ public class Catalog {
 	 *             if the table doesn't exist
 	 */
 	public int getTableId(final String name) throws NoSuchElementException {
-		// some code goes here
-		return 0;
+		for(Table t: table2file.keySet()){
+			if(t.getname().equals(name))
+				return t.getid();
+		}
+		
+		throw new NoSuchElementException("No such "+name+" exist");
 	}
 
 	/**
@@ -87,8 +102,7 @@ public class Catalog {
 	 */
 	public TupleDesc getTupleDesc(final int tableid)
 			throws NoSuchElementException {
-		// some code goes here
-		return null;
+		return getDatabaseFile(tableid).getTupleDesc();
 	}
 
 	/**
@@ -101,8 +115,11 @@ public class Catalog {
 	 */
 	public DbFile getDatabaseFile(final int tableid)
 			throws NoSuchElementException {
-		// some code goes here
-		return null;
+		for(Table t: table2file.keySet()){
+			if(t.getid()==tableid)
+				return table2file.get(t);
+		}
+		throw new NoSuchElementException("No such DbFile with id"+tableid);
 	}
 
 	public String getPrimaryKey(final int tableid) {
