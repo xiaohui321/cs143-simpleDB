@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -50,12 +51,29 @@ public class Catalog {
 	 * @param pkeyField
 	 *           the name of the primary key field
 	 */
-	public void addTable(final DbFile file, final String name, final String pkeyField) {
-		tableList.add(new Table(name, pkeyField, file));	
+	public void addTable(final DbFile file, final String name, final String pkeyField) throws DbException{
+		if(name==null || file.equals(null)) throw new DbException("name is null");
+		  int i;
+		  for(i=tableList.size()-1; i>=0; i--){
+			  if(tableList.get(i).getName().equals(name))
+				  break;
+		  }
+		  if(i>=0){
+		  tableList.get(i).setFile(file);
+		  tableList.get(i).setName(name);
+		  tableList.get(i).setPkeyField(pkeyField);
+		  }
+		  else
+		  tableList.add(new Table(name, pkeyField, file));		
 	}
 
 	public void addTable(final DbFile file, final String name) {
-		addTable(file, name, "");
+		try {
+			addTable(file, name, "");
+		} catch (DbException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	public List<Table> getAllTables(){
@@ -81,11 +99,11 @@ public class Catalog {
 	 *             if the table doesn't exist
 	 */
 	public int getTableId(final String name) throws NoSuchElementException {
-		for(Table t: tableList.keySet()){
-			if(t.getname().equals(name))
-				return t.getid();
+	    if(name==null) throw new NoSuchElementException("name is null");
+		for(Table t: tableList){
+			if(t.getName().equals(name))
+				return t.getFile().getId();
 		}
-		
 		throw new NoSuchElementException("No such "+name+" exist");
 	}
 
@@ -113,31 +131,38 @@ public class Catalog {
 	 */
 	public DbFile getDatabaseFile(final int tableid)
 			throws NoSuchElementException {
-		for(Table t: tableList.keySet()){
-			if(t.getid()==tableid)
-				return tableList.get(t);
+		for(Table t: tableList){
+			if(t.getFile().getId()==tableid)
+				return t.getFile();
 		}
 		throw new NoSuchElementException("No such DbFile with id"+tableid);
 	}
 
-	public String getPrimaryKey(final int tableid) {
-		// some code goes here
-		return null;
+	public String getPrimaryKey(final int tableid) throws NoSuchElementException {
+		for(Table t: tableList){
+			if(t.getFile().getId()==tableid)
+				return t.getPkeyField();
+		}
+		throw new NoSuchElementException("Haha--from ray"); 
 	}
 
+	
 	public Iterator<Integer> tableIdIterator() {
-		// some code goes here
+		//TODO: integer iterator unsolved
 		return null;
 	}
 
-	public String getTableName(final int id) {
-		// some code goes here
-		return null;
+	public String getTableName(final int id) throws NoSuchElementException{
+		for(Table t: tableList){
+			if(t.getFile().getId()==id)
+				return t.getName();
+		}
+		throw new NoSuchElementException("Xixi--from ray");
 	}
 
 	/** Delete all tables from the catalog */
 	public void clear() {
-		// some code goes here
+		tableList.clear();
 	}
 
 	/**
@@ -189,7 +214,12 @@ public class Catalog {
 				TupleDesc t = new TupleDesc(typeAr, namesAr);
 				HeapFile tabHf = new HeapFile(new File(baseFolder + "/" + name
 						+ ".dat"), t);
-				addTable(tabHf, name, primaryKey);
+				try {
+					addTable(tabHf, name, primaryKey);
+				} catch (DbException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				System.out.println("Added table : " + name + " with schema "
 						+ t);
 			}
