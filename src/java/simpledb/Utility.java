@@ -156,7 +156,8 @@ public class Utility {
     public static String listToString(final ArrayList<Integer> list) {
 	String out = "";
 	for (Integer i : list) {
-	    if (out.length() > 0) out += "\t";
+	    if (out.length() > 0)
+		out += "\t";
 	    out += i;
 	}
 	return out;

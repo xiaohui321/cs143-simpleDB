@@ -194,16 +194,19 @@ public class TupleDesc implements Serializable {
     @Override
     public boolean equals(final Object o) {
 	/* check argument type */
-	if (!(o instanceof TupleDesc)) return false;
+	if (!(o instanceof TupleDesc))
+	    return false;
 
 	TupleDesc obj = (TupleDesc) o;
 
 	/* check number of fields */
-	if (obj.numFields() != numFields()) return false;
+	if (obj.numFields() != numFields())
+	    return false;
 
 	/* check each pair of fieldTypes */
 	for (int i = 0; i < numFields(); i++)
-	    if (!obj.getFieldType(i).equals(getFieldType(i))) return false;
+	    if (!obj.getFieldType(i).equals(getFieldType(i)))
+		return false;
 
 	return true;
     }
