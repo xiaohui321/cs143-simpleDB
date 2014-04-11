@@ -5,7 +5,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 /**
@@ -19,12 +22,17 @@ import java.util.NoSuchElementException;
 public class HeapPage implements Page {
 
     final HeapPageId pid;
+
     final TupleDesc td;
+
     final byte header[];
+
     final Tuple tuples[];
+
     final int numSlots;
 
     byte[] oldData;
+
     private final Byte oldDataLock = new Byte((byte) 0);
 
     /**
@@ -78,7 +86,8 @@ public class HeapPage implements Page {
      * @return the number of tuples on this page
      */
     private int getNumTuples() {
-	return numSlots;
+	return (int) Math.floor(BufferPool.PAGE_SIZE * 8
+	        / (td.getSize() * 8 + 1));
     }
 
     /**
@@ -89,10 +98,7 @@ public class HeapPage implements Page {
      *         each tuple occupying tupleSize bytes
      */
     private int getHeaderSize() {
-
-	// some code goes here
-	return 0;
-
+	return (int) Math.ceil(numSlots / 8.0);
     }
 
     /**
@@ -127,8 +133,7 @@ public class HeapPage implements Page {
      */
     @Override
     public HeapPageId getId() {
-	// some code goes here
-	throw new UnsupportedOperationException("implement this");
+	return pid;
     }
 
     /**
@@ -314,16 +319,32 @@ public class HeapPage implements Page {
      * Returns the number of empty slots on this page.
      */
     public int getNumEmptySlots() {
-	// some code goes here
-	return 0;
+	int numEmptySlots = 0;
+
+	for (byte element : header) {
+	    byte[] b = new byte[] { element };
+	    BigInteger bi = new BigInteger(b);
+
+	    for (int i = 0; i < 8; i++)
+		if (!bi.testBit(i))
+		    numEmptySlots++;
+	}
+
+	return numEmptySlots;
     }
 
     /**
      * Returns true if associated slot on this page is filled.
      */
     public boolean isSlotUsed(final int i) {
-	// some code goes here
-	return false;
+	if (i > numSlots || i < 0)
+	    throw new IllegalArgumentException("argument i is incorrect");
+
+	int index = (int) Math.floor(i / 8.0);
+	byte[] b = new byte[] { header[index] };
+
+	BigInteger bi = new BigInteger(b);
+	return bi.testBit(i % 8);
     }
 
     /**
@@ -340,8 +361,12 @@ public class HeapPage implements Page {
      *         iterator shouldn't return tuples in empty slots!)
      */
     public Iterator<Tuple> iterator() {
-	// some code goes here
-	return null;
+	List<Tuple> filledSlotsList = new ArrayList<Tuple>();
+	for (int i = 0; i < tuples.length; i++)
+	    if (isSlotUsed(i))
+		filledSlotsList.add(tuples[i]);
+
+	return filledSlotsList.iterator();
     }
 
 }
