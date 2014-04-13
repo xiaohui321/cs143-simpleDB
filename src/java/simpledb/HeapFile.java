@@ -1,8 +1,10 @@
 package simpledb;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * HeapFile is an implementation of a DbFile that stores a collection of tuples
@@ -67,8 +69,26 @@ public class HeapFile implements DbFile {
 	// see DbFile.java for javadocs
 	@Override
 	public Page readPage(final PageId pid) {
-		// TODO: some code goes here
-		return null;
+      int pageNum = pid.pageNumber();
+      int offset = pageNum*BufferPool.PAGE_SIZE;
+      int length = (int) file.length();
+      byte[] filebytes = new byte[length];
+      byte[] pagebytes = null;
+      try{
+    	  FileInputStream fileInputStream = new FileInputStream(file);
+          fileInputStream.read(filebytes);
+          pagebytes = Arrays.copyOfRange(filebytes, offset, offset+BufferPool.PAGE_SIZE);    	  
+      }catch(IOException e){
+    	  e.printStackTrace();
+      }
+      
+	  try {
+			return new HeapPage((HeapPageId)pid, pagebytes);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;	
+		}
 	}
 
 	// see DbFile.java for javadocs
@@ -82,8 +102,7 @@ public class HeapFile implements DbFile {
 	 * Returns the number of pages in this HeapFile.
 	 */
 	public int numPages() {
-		// TODO: some code goes here
-		return 0;
+		return (int) Math.ceil(file.length()/BufferPool.PAGE_SIZE);
 	}
 
 	// see DbFile.java for javadocs
@@ -107,8 +126,7 @@ public class HeapFile implements DbFile {
 	// see DbFile.java for javadocs
 	@Override
 	public DbFileIterator iterator(final TransactionId tid) {
-		// TODO: some code goes here
-		return null;
+		return new HeapFileIterator(tid, this);
 	}
 
 }
