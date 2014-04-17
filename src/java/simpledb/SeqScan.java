@@ -1,6 +1,6 @@
 package simpledb;
 
-import java.util.*;
+import java.util.NoSuchElementException;
 
 /**
  * SeqScan is an implementation of a sequential scan access method that reads
@@ -11,11 +11,12 @@ public class SeqScan implements DbIterator {
 
     private static final long serialVersionUID = 1L;
 
-    private TransactionId seqtid;
-    private String seqtableAlias;
-    private int seqtableid;
-    private HeapFile seqfile;
-    private HeapFileIterator seqfileiterator;
+    private final TransactionId seqTransId;
+    private String seqTableAlias;
+    private int seqTableId;
+    private final HeapFile seqFile;
+    private HeapFileIterator seqFileIterator;
+
     /**
      * Creates a sequential scan over the specified table as a part of the
      * specified transaction.
@@ -32,33 +33,34 @@ public class SeqScan implements DbIterator {
      *            are, but the resulting name can be null.fieldName,
      *            tableAlias.null, or null.null).
      */
-    public SeqScan(TransactionId tid, int tableid, String tableAlias) {
-        seqtid = tid;
-        seqtableid = tableid;
-        seqtableAlias = tableAlias;
-        seqfile = (HeapFile) Database.getCatalog().getDatabaseFile(seqtableid);
-        seqfileiterator = null;
+    public SeqScan(final TransactionId tid, final int tableid,
+	    final String tableAlias) {
+	seqTransId = tid;
+	seqTableId = tableid;
+	seqTableAlias = tableAlias;
+	seqFile = (HeapFile) Database.getCatalog().getDatabaseFile(seqTableId);
+	seqFileIterator = null;
     }
 
     /**
-     * @return
-     *       return the table name of the table the operator scans. This should
-     *       be the actual name of the table in the catalog of the database
+     * @return return the table name of the table the operator scans. This
+     *         should be the actual name of the table in the catalog of the
+     *         database
      * */
     public String getTableName() {
-        return Database.getCatalog().getTableName(seqtableid);
+	return Database.getCatalog().getTableName(seqTableId);
     }
-    
+
     /**
-     * @return Return the alias of the table this operator scans. 
+     * @return Return the alias of the table this operator scans.
      * */
-    public String getAlias()
-    {
-        return seqtableAlias;
+    public String getAlias() {
+	return seqTableAlias;
     }
 
     /**
      * Reset the tableid, and tableAlias of this operator.
+     * 
      * @param tableid
      *            the table to scan.
      * @param tableAlias
@@ -69,18 +71,19 @@ public class SeqScan implements DbIterator {
      *            are, but the resulting name can be null.fieldName,
      *            tableAlias.null, or null.null).
      */
-    public void reset(int tableid, String tableAlias) {
-       seqtableid = tableid;
-       seqtableAlias = tableAlias;
+    public void reset(final int tableid, final String tableAlias) {
+	seqTableId = tableid;
+	seqTableAlias = tableAlias;
     }
 
-    public SeqScan(TransactionId tid, int tableid) {
-        this(tid, tableid, Database.getCatalog().getTableName(tableid));
+    public SeqScan(final TransactionId tid, final int tableid) {
+	this(tid, tableid, Database.getCatalog().getTableName(tableid));
     }
 
+    @Override
     public void open() throws DbException, TransactionAbortedException {
-       seqfileiterator = (HeapFileIterator) seqfile.iterator(seqtid);
-       seqfileiterator.open();
+	seqFileIterator = (HeapFileIterator) seqFile.iterator(seqTransId);
+	seqFileIterator.open();
     }
 
     /**
@@ -92,25 +95,30 @@ public class SeqScan implements DbIterator {
      * @return the TupleDesc with field names from the underlying HeapFile,
      *         prefixed with the tableAlias string from the constructor.
      */
+    @Override
     public TupleDesc getTupleDesc() {
-        return Database.getCatalog().getTupleDesc(seqtableid);
+	return Database.getCatalog().getTupleDesc(seqTableId);
     }
 
+    @Override
     public boolean hasNext() throws TransactionAbortedException, DbException {
-        return seqfileiterator.hasNext();
+	return seqFileIterator.hasNext();
     }
 
+    @Override
     public Tuple next() throws NoSuchElementException,
-            TransactionAbortedException, DbException {
-        return seqfileiterator.next();
+	    TransactionAbortedException, DbException {
+	return seqFileIterator.next();
     }
 
+    @Override
     public void close() {
-        seqfileiterator.close();
+	seqFileIterator.close();
     }
 
+    @Override
     public void rewind() throws DbException, NoSuchElementException,
-            TransactionAbortedException {
-        seqfileiterator.rewind();
+	    TransactionAbortedException {
+	seqFileIterator.rewind();
     }
 }

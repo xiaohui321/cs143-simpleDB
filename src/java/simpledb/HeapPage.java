@@ -320,16 +320,18 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
 	int numEmptySlots = 0;
+	int checkedSlots = 0;
 
 	for (byte element : header) {
 	    byte[] b = new byte[] { element };
 	    BigInteger bi = new BigInteger(b);
 
 	    for (int i = 0; i < 8; i++)
-		if (!bi.testBit(i))
+		if (checkedSlots < numSlots && !bi.testBit(i)) {
 		    numEmptySlots++;
+		    checkedSlots++;
+		}
 	}
-
 	return numEmptySlots;
     }
 

@@ -1,0 +1,33 @@
+==============================
+	UCLA CS143 
+	Spring 2014
+	HOMEWORK 1
+==============================
+
+AUTHORS
+========
+Name: Xiaohui, Zhou 
+ID: 104-014-248
+
+Name: Tianrui, Zhang
+ID: 204-050-387
+
+DESIGN DECISIONS
+================
+1. Created a new class "Table" storing the name, primary key and
+   DbFile for that particular table.
+2. In the catalog class, we used a treeMap to store all pairs of
+   <table's ID, Table>
+
+
+CHANGES TO THE API
+==================
+None.
+
+MISSING OR INCOMPLETE ELEMENTS
+==============================
+None.
+
+TIME SPENT ON THIS PROJECT :		Approximately 10 hours
+
+DIFFICULTIES OR CONFUSING PARTS:	None
