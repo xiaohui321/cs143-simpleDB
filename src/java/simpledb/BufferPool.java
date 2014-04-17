@@ -72,7 +72,7 @@ public class BufferPool {
 	    final Permissions perm) throws TransactionAbortedException,
 	    DbException {
 	// TODO: add lock
-	// TODO: add evit policy
+	// TODO: add eviction policy
 
 	if (pageMap.containsKey(pid))
 	    return pageMap.get(pid);
