@@ -6,8 +6,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.TreeMap;
 import java.util.UUID;
 
 /**
@@ -20,13 +21,13 @@ import java.util.UUID;
  */
 public class Catalog {
 
-    private final List<Table> tableList;
+    private final Map<Integer, Table> tableMap;
 
     /**
      * Constructor. Creates a new, empty catalog.
      */
     public Catalog() {
-	tableList = new ArrayList<Table>();
+	tableMap = new TreeMap<Integer, Table>();
     }
 
     /**
@@ -48,19 +49,21 @@ public class Catalog {
      */
     public void addTable(final DbFile file, final String name,
 	    final String pkeyField) throws IllegalArgumentException {
+	/* Checking parameters */
 	if (file == null)
 	    throw new IllegalArgumentException("file is null");
 
-	int i;
-	for (i = tableList.size() - 1; i >= 0; i--)
-	    if (tableList.get(i).getName().equals(name))
-		break;
+	if (name == null)
+	    throw new IllegalArgumentException("name is null");
 
-	if (i >= 0) {
-	    tableList.get(i).setFile(file);
-	    tableList.get(i).setPkeyField(pkeyField);
-	} else
-	    tableList.add(new Table(name, pkeyField, file));
+	if (pkeyField == null)
+	    throw new IllegalArgumentException("pkeyField is null");
+
+	Table newTable = new Table(name, pkeyField, file);
+	if (tableMap.containsValue(newTable))
+	    tableMap.remove(file.getId());
+
+	tableMap.put(file.getId(), newTable);
     }
 
     public void addTable(final DbFile file, final String name) {
@@ -95,11 +98,11 @@ public class Catalog {
 	if (name == null)
 	    throw new NoSuchElementException("name is null");
 
-	for (Table t : tableList)
+	for (Table t : tableMap.values())
 	    if (t.getName().equals(name))
 		return t.getFile().getId();
 
-	throw new NoSuchElementException("No such " + name + " exist");
+	throw new NoSuchElementException("No such " + name + " exists");
     }
 
     /**
@@ -126,7 +129,7 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(final int tableid)
 	    throws NoSuchElementException {
-	for (Table t : tableList)
+	for (Table t : tableMap.values())
 	    if (t.getFile().getId() == tableid)
 		return t.getFile();
 
@@ -135,7 +138,7 @@ public class Catalog {
 
     public String getPrimaryKey(final int tableid)
 	    throws NoSuchElementException {
-	for (Table t : tableList)
+	for (Table t : tableMap.values())
 	    if (t.getFile().getId() == tableid)
 		return t.getPkeyField();
 
@@ -143,12 +146,11 @@ public class Catalog {
     }
 
     public Iterator<Integer> tableIdIterator() {
-	// TODO: integer iterator unsolved
-	return null;
+	return tableMap.keySet().iterator();
     }
 
     public String getTableName(final int id) throws NoSuchElementException {
-	for (Table t : tableList)
+	for (Table t : tableMap.values())
 	    if (t.getFile().getId() == id)
 		return t.getName();
 
@@ -156,7 +158,7 @@ public class Catalog {
     }
 
     public Page getPage(final PageId pid) throws NoSuchElementException {
-	for (Table table : tableList)
+	for (Table table : tableMap.values())
 	    if (pid.getTableId() == table.getFile().getId())
 		return table.getFile().readPage(pid);
 	throw new NoSuchElementException("no page with given id");
@@ -164,7 +166,7 @@ public class Catalog {
 
     /** Delete all tables from the catalog */
     public void clear() {
-	tableList.clear();
+	tableMap.clear();
     }
 
     /**

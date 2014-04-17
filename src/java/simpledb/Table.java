@@ -39,4 +39,23 @@ public class Table {
     public void setFile(final DbFile file) {
 	this.file = file;
     }
+
+    @Override
+    public boolean equals(final Object o) {
+	if (!(o instanceof Table))
+	    return false;
+
+	Table other = (Table) o;
+	if (getName().equals(other.getName()))
+	    return true;
+
+	return false;
+    }
+
+    @Override
+    public int hashCode() {
+	assert false : "hashCode not designed";
+	return 2048; // any arbitrary constant will do
+    }
+
 }
