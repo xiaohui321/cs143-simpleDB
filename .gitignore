@@ -5,3 +5,5 @@
 log
 
 .settings
+
+*.tar.bz2
