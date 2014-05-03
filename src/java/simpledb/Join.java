@@ -5,9 +5,16 @@ import java.util.NoSuchElementException;
 /**
  * The Join operator implements the relational join operation.
  */
-public class Join extends Operator {
+public class Join implements DbIterator {
 
     private static final long serialVersionUID = 1L;
+
+    private Tuple next = null;
+    private int estimatedCardinality = 0;
+    private final JoinPredicate joinPredicate;
+    private DbIterator childDbIterator1, childDbIterator2;
+    private Tuple childTuple1;
+    private boolean child1ShouldGetNext;
 
     /**
      * Constructor. Accepts to children to join and the predicate to join them
@@ -20,12 +27,6 @@ public class Join extends Operator {
      * @param child2
      *            Iterator for the right(inner) relation to join
      */
-
-    private final JoinPredicate joinPredicate;
-    private DbIterator childDbIterator1, childDbIterator2;
-    private Tuple childTuple1;
-    private boolean child1ShouldGetNext;
-
     public Join(final JoinPredicate p, final DbIterator child1,
 	    final DbIterator child2) {
 	joinPredicate = p;
@@ -33,6 +34,7 @@ public class Join extends Operator {
 	childDbIterator2 = child2;
 	childTuple1 = null;
 	child1ShouldGetNext = true;
+
     }
 
     public JoinPredicate getJoinPredicate() {
@@ -61,6 +63,7 @@ public class Join extends Operator {
      * @see simpledb.TupleDesc#merge(TupleDesc, TupleDesc) for possible
      *      implementation logic.
      */
+
     @Override
     public TupleDesc getTupleDesc() {
 	TupleDesc tupleDesc1 = childDbIterator1.getTupleDesc();
@@ -73,12 +76,14 @@ public class Join extends Operator {
 	    TransactionAbortedException {
 	childDbIterator1.open();
 	childDbIterator2.open();
+
     }
 
     @Override
     public void close() {
 	childDbIterator1.close();
 	childDbIterator2.close();
+
     }
 
     @Override
@@ -105,7 +110,6 @@ public class Join extends Operator {
      * @return The next matching tuple.
      * @see JoinPredicate#filter
      */
-    @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
 	do {
 	    if (child1ShouldGetNext)
@@ -137,15 +141,58 @@ public class Join extends Operator {
 	return null;
     }
 
-    @Override
     public DbIterator[] getChildren() {
 	return new DbIterator[] { childDbIterator1, childDbIterator2 };
     }
 
-    @Override
     public void setChildren(final DbIterator[] children) {
 	childDbIterator1 = children[0];
 	childDbIterator2 = children[1];
     }
 
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#hasNext()
+     */
+    @Override
+    public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (next == null)
+	    next = fetchNext();
+	return next != null;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#next()
+     */
+    @Override
+    public Tuple next() throws DbException, TransactionAbortedException,
+	    NoSuchElementException {
+	if (next == null) {
+	    next = fetchNext();
+	    if (next == null)
+		throw new NoSuchElementException();
+	}
+
+	Tuple result = next;
+	next = null;
+	return result;
+    }
+
+    /**
+     * @return The estimated cardinality of this operator. Will only be used in
+     *         lab6
+     * */
+    public int getEstimatedCardinality() {
+	return estimatedCardinality;
+    }
+
+    /**
+     * @param card
+     *            The estimated cardinality of this operator Will only be used
+     *            in lab6
+     * */
+    protected void setEstimatedCardinality(final int card) {
+	estimatedCardinality = card;
+    }
 }

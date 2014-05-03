@@ -5,9 +5,14 @@ import java.util.NoSuchElementException;
 /**
  * Filter is an operator that implements a relational select.
  */
-public class Filter extends Operator {
+public class Filter implements DbIterator {
 
     private static final long serialVersionUID = 1L;
+
+    private Tuple next = null;
+    private int estimatedCardinality = 0;
+    private final Predicate predicate;
+    private DbIterator childDbIterator;
 
     /**
      * Constructor accepts a predicate to apply and a child operator to read
@@ -18,10 +23,6 @@ public class Filter extends Operator {
      * @param child
      *            The child operator
      */
-
-    private final Predicate predicate;
-    private DbIterator childDbIterator;
-
     public Filter(final Predicate p, final DbIterator child) {
 	predicate = p;
 	childDbIterator = child;
@@ -39,12 +40,13 @@ public class Filter extends Operator {
     @Override
     public void open() throws DbException, NoSuchElementException,
 	    TransactionAbortedException {
+
 	childDbIterator.open();
-	childDbIterator.rewind();
     }
 
     @Override
     public void close() {
+	next = null;
 	childDbIterator.close();
     }
 
@@ -62,7 +64,6 @@ public class Filter extends Operator {
      *         more tuples
      * @see Predicate#filter
      */
-    @Override
     protected Tuple fetchNext() throws NoSuchElementException,
 	    TransactionAbortedException, DbException {
 	while (childDbIterator.hasNext()) {
@@ -73,14 +74,58 @@ public class Filter extends Operator {
 	return null;
     }
 
-    @Override
     public DbIterator[] getChildren() {
 	return new DbIterator[] { childDbIterator };
     }
 
-    @Override
     public void setChildren(final DbIterator[] children) {
 	childDbIterator = children[0];
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#hasNext()
+     */
+    @Override
+    public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (next == null)
+	    next = fetchNext();
+	return next != null;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#next()
+     */
+    @Override
+    public Tuple next() throws DbException, TransactionAbortedException,
+	    NoSuchElementException {
+	if (next == null) {
+	    next = fetchNext();
+	    if (next == null)
+		throw new NoSuchElementException();
+	}
+
+	Tuple result = next;
+	next = null;
+	return result;
+    }
+
+    /**
+     * @return The estimated cardinality of this operator. Will only be used in
+     *         lab6
+     * */
+    public int getEstimatedCardinality() {
+	return estimatedCardinality;
+    }
+
+    /**
+     * @param card
+     *            The estimated cardinality of this operator Will only be used
+     *            in lab6
+     * */
+    protected void setEstimatedCardinality(final int card) {
+	estimatedCardinality = card;
     }
 
 }
