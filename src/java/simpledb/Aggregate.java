@@ -7,16 +7,17 @@ import java.util.NoSuchElementException;
  * min). Note that we only support aggregates over a single column, grouped by a
  * single column.
  */
-public class Aggregate extends Operator {
+public class Aggregate implements DbIterator {
 
     private static final long serialVersionUID = 1L;
 
     private DbIterator childDbIterator;
-
     private DbIterator aggregateIterator;
     private final int aggregateFieldInt, groupByFieldInt;
     private final Aggregator.Op operator;
     private Aggregator aggregator;
+    private Tuple next = null;
+    private int estimatedCardinality = 0;
 
     /**
      * Constructor.
@@ -117,7 +118,6 @@ public class Aggregate extends Operator {
      * the result tuple should contain one field representing the result of the
      * aggregate. Should return null if there are no more tuples.
      */
-    @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
 	if (aggregateIterator == null)
 	    throw new DbException("open() not called yet");
@@ -179,14 +179,57 @@ public class Aggregate extends Operator {
 	aggregateIterator.close();
     }
 
-    @Override
     public DbIterator[] getChildren() {
 	return new DbIterator[] { childDbIterator };
     }
 
-    @Override
     public void setChildren(final DbIterator[] children) {
 	childDbIterator = children[0];
     }
 
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#hasNext()
+     */
+    @Override
+    public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (next == null)
+	    next = fetchNext();
+	return next != null;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#next()
+     */
+    @Override
+    public Tuple next() throws DbException, TransactionAbortedException,
+	    NoSuchElementException {
+	if (next == null) {
+	    next = fetchNext();
+	    if (next == null)
+		throw new NoSuchElementException();
+	}
+
+	Tuple result = next;
+	next = null;
+	return result;
+    }
+
+    /**
+     * @return The estimated cardinality of this operator. Will only be used in
+     *         lab6
+     * */
+    public int getEstimatedCardinality() {
+	return estimatedCardinality;
+    }
+
+    /**
+     * @param card
+     *            The estimated cardinality of this operator Will only be used
+     *            in lab6
+     * */
+    protected void setEstimatedCardinality(final int card) {
+	estimatedCardinality = card;
+    }
 }
