@@ -72,20 +72,17 @@ public class BufferPool {
 	    final Permissions perm) throws TransactionAbortedException,
 	    DbException {
 	// TODO: add lock
-	// TODO: add eviction policy
-
 	if (pageMap.containsKey(pid))
 	    return pageMap.get(pid);
 
 	// page not found in buffer
 	Page newPage = Database.getCatalog().getPage(pid);
 
-	if (pageMap.size() < maxNumPages) {
-	    pageMap.put(pid, newPage);
-	    return newPage;
-	} else
-	    throw new DbException("The bufferbool is full");
+	if (pageMap.size() == maxNumPages)
+	    evictPage();
 
+	pageMap.put(pid, newPage);
+	return newPage;
     }
 
     /**
@@ -158,8 +155,8 @@ public class BufferPool {
     public void insertTuple(final TransactionId tid, final int tableId,
 	    final Tuple t) throws DbException, IOException,
 	    TransactionAbortedException {
-	// some code goes here
-	// not necessary for lab1
+	// TODO:unfinished
+	Database.getCatalog().getDatabaseFile(tableId).insertTuple(tid, t);
     }
 
     /**
@@ -180,6 +177,7 @@ public class BufferPool {
 	    throws DbException, IOException, TransactionAbortedException {
 	// some code goes here
 	// not necessary for lab1
+	// TODO:unfinished
     }
 
     /**
@@ -188,9 +186,8 @@ public class BufferPool {
      * mode.
      */
     public synchronized void flushAllPages() throws IOException {
-	// some code goes here
-	// not necessary for lab1
-
+	for (PageId pid : pageMap.keySet())
+	    flushPage(pid);
     }
 
     /**
@@ -212,6 +209,7 @@ public class BufferPool {
     private synchronized void flushPage(final PageId pid) throws IOException {
 	// some code goes here
 	// not necessary for lab1
+	// TODO:unfinished
     }
 
     /**
@@ -230,6 +228,7 @@ public class BufferPool {
     private synchronized void evictPage() throws DbException {
 	// some code goes here
 	// not necessary for lab1
+	// TODO:unfinished
     }
 
 }
