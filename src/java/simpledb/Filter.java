@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 public class Filter implements DbIterator {
 
     private static final long serialVersionUID = 1L;
-
+    private boolean opened = false;
     private Tuple next = null;
     private int estimatedCardinality = 0;
     private final Predicate predicate;
@@ -40,13 +40,14 @@ public class Filter implements DbIterator {
     @Override
     public void open() throws DbException, NoSuchElementException,
 	    TransactionAbortedException {
-
+	opened = true;
 	childDbIterator.open();
     }
 
     @Override
     public void close() {
 	next = null;
+	opened = false;
 	childDbIterator.close();
     }
 
@@ -66,6 +67,8 @@ public class Filter implements DbIterator {
      */
     protected Tuple fetchNext() throws NoSuchElementException,
 	    TransactionAbortedException, DbException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	while (childDbIterator.hasNext()) {
 	    Tuple tuple = childDbIterator.next();
 	    if (predicate.filter(tuple))
@@ -88,6 +91,8 @@ public class Filter implements DbIterator {
      */
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	if (next == null)
 	    next = fetchNext();
 	return next != null;

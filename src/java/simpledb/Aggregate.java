@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 public class Aggregate implements DbIterator {
 
     private static final long serialVersionUID = 1L;
-
+    private boolean opened = false;
     private DbIterator childDbIterator;
     private DbIterator aggregateIterator;
     private final int aggregateFieldInt, groupByFieldInt;
@@ -104,6 +104,7 @@ public class Aggregate implements DbIterator {
     @Override
     public void open() throws NoSuchElementException, DbException,
 	    TransactionAbortedException {
+	opened = true;
 	childDbIterator.open();
 	while (childDbIterator.hasNext())
 	    aggregator.mergeTupleIntoGroup(childDbIterator.next());
@@ -119,6 +120,8 @@ public class Aggregate implements DbIterator {
      * aggregate. Should return null if there are no more tuples.
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	if (aggregateIterator == null)
 	    throw new DbException("open() not called yet");
 	if (aggregateIterator.hasNext())
@@ -175,6 +178,7 @@ public class Aggregate implements DbIterator {
 
     @Override
     public void close() {
+	opened = false;
 	childDbIterator.close();
 	aggregateIterator.close();
     }
@@ -193,6 +197,8 @@ public class Aggregate implements DbIterator {
      */
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	if (next == null)
 	    next = fetchNext();
 	return next != null;
@@ -205,6 +211,8 @@ public class Aggregate implements DbIterator {
     @Override
     public Tuple next() throws DbException, TransactionAbortedException,
 	    NoSuchElementException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	if (next == null) {
 	    next = fetchNext();
 	    if (next == null)

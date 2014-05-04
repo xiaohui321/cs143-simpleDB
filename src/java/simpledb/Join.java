@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 public class Join implements DbIterator {
 
     private static final long serialVersionUID = 1L;
-
+    private boolean opened = false;
     private Tuple next = null;
     private int estimatedCardinality = 0;
     private final JoinPredicate joinPredicate;
@@ -76,11 +76,13 @@ public class Join implements DbIterator {
 	    TransactionAbortedException {
 	childDbIterator1.open();
 	childDbIterator2.open();
+	opened = true;
 
     }
 
     @Override
     public void close() {
+	opened = false;
 	childDbIterator1.close();
 	childDbIterator2.close();
 
@@ -156,6 +158,8 @@ public class Join implements DbIterator {
      */
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	if (next == null)
 	    next = fetchNext();
 	return next != null;
@@ -168,6 +172,8 @@ public class Join implements DbIterator {
     @Override
     public Tuple next() throws DbException, TransactionAbortedException,
 	    NoSuchElementException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
 	if (next == null) {
 	    next = fetchNext();
 	    if (next == null)

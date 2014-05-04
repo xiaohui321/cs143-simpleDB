@@ -1,14 +1,22 @@
 package simpledb;
 
 import java.io.IOException;
+import java.util.NoSuchElementException;
 
 /**
  * The delete operator. Delete reads tuples from its child operator and removes
  * them from the table they belong to.
  */
-public class Delete extends Operator {
+public class Delete implements DbIterator {
 
     private static final long serialVersionUID = 1L;
+    private boolean opened = false;
+    private Tuple next = null;
+    private int estimatedCardinality = 0;
+
+    private final TransactionId transID;
+    private DbIterator childDbIterator;
+    private final TupleDesc td;
 
     /**
      * Constructor specifying the transaction that this delete belongs to as
@@ -19,25 +27,33 @@ public class Delete extends Operator {
      * @param child
      *            The child operator from which to read tuples for deletion
      */
-    public Delete(TransactionId t, DbIterator child) {
-        // some code goes here
+    public Delete(final TransactionId t, final DbIterator child) {
+	transID = t;
+	childDbIterator = child;
+	td = new TupleDesc(new Type[] { Type.STRING_TYPE },
+	        new String[] { "Deleted Record Counts" });
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
-        // some code goes here
-        return null;
+	return td;
     }
 
+    @Override
     public void open() throws DbException, TransactionAbortedException {
-        // some code goes here
+	opened = true;
+	childDbIterator.open();
     }
 
+    @Override
     public void close() {
-        // some code goes here
+	opened = false;
+	childDbIterator.close();
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-        // some code goes here
+	childDbIterator.rewind();
     }
 
     /**
@@ -50,19 +66,80 @@ public class Delete extends Operator {
      * @see BufferPool#deleteTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-        // some code goes here
-        return null;
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
+	int count = 0;
+	while (childDbIterator.hasNext()) {
+	    count++;
+	    Tuple tuple = childDbIterator.next();
+	    try {
+		Database.getBufferPool().deleteTuple(transID, tuple);
+	    }
+	    catch (IOException e) {
+		e.printStackTrace();
+	    }
+	}
+	Tuple returnTuple = new Tuple(td);
+	returnTuple.setField(0, new IntField(count));
+	return returnTuple;
     }
 
-    @Override
     public DbIterator[] getChildren() {
-        // some code goes here
-        return null;
+	return new DbIterator[] { childDbIterator };
     }
 
+    public void setChildren(final DbIterator[] children) {
+	childDbIterator = children[0];
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#hasNext()
+     */
     @Override
-    public void setChildren(DbIterator[] children) {
-        // some code goes here
+    public boolean hasNext() throws DbException, TransactionAbortedException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
+	if (next == null)
+	    next = fetchNext();
+	return next != null;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see simpledb.DbIterator#next()
+     */
+    @Override
+    public Tuple next() throws DbException, TransactionAbortedException,
+	    NoSuchElementException {
+	if (!opened)
+	    throw new IllegalStateException("Operator not yet open");
+	if (next == null) {
+	    next = fetchNext();
+	    if (next == null)
+		throw new NoSuchElementException();
+	}
+
+	Tuple result = next;
+	next = null;
+	return result;
+    }
+
+    /**
+     * @return The estimated cardinality of this operator. Will only be used in
+     *         lab6
+     * */
+    public int getEstimatedCardinality() {
+	return estimatedCardinality;
+    }
+
+    /**
+     * @param card
+     *            The estimated cardinality of this operator Will only be used
+     *            in lab6
+     * */
+    protected void setEstimatedCardinality(final int card) {
+	estimatedCardinality = card;
     }
 
 }
