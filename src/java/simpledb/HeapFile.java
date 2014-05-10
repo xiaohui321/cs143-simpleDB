@@ -80,6 +80,7 @@ public class HeapFile implements DbFile {
 	    fileInputStream.read(filebytes);
 	    pagebytes = Arrays.copyOfRange(filebytes, offset, offset
 		    + BufferPool.PAGE_SIZE);
+	    fileInputStream.close();
 	    return new HeapPage((HeapPageId) pid, pagebytes);
 	}
 	catch (IOException e) {
@@ -94,6 +95,7 @@ public class HeapFile implements DbFile {
 	try {
 	    FileOutputStream fileOutputStream = new FileOutputStream(file, true);
 	    fileOutputStream.write(page.getPageData());
+	    fileOutputStream.close();
 	}
 	catch (IOException e) {
 	    e.printStackTrace();
