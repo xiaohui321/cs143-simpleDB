@@ -32,8 +32,8 @@ public class BufferPool {
 
     private final Map<PageId, Page> pageMap;
     private final int maxNumPages;
-    private LinkedList<PageId> LRU;
-    
+    private final LinkedList<PageId> LRU;
+
     /**
      * Creates a BufferPool that caches up to numPages pages.
      * 
@@ -85,7 +85,7 @@ public class BufferPool {
 	    evictPage();
 	// Put page in bufferpool
 	pageMap.put(pid, newPage);
-	
+
 	// Put pageId into LRU list for later eviction
 	LRU.add(pid);
 	return newPage;
@@ -216,14 +216,16 @@ public class BufferPool {
      *            an ID indicating the page to flush
      */
     private synchronized void flushPage(final PageId pid) throws IOException {
-    	HeapPage page=(HeapPage) pageMap.get(pid);  //Get the page we are going to flush
-    	TransactionId tid=page.isDirty();  // Try to get the transaction id of the page to be flushed.
-    	if(tid != null)  //If null, this means it is not dirty
-    	{
-    		Database.getCatalog().getDatabaseFile(pid.getTableId()).writePage(page);
-    		page.markDirty(false, tid);
-    	}
-    		
+	// Get the page we are going to flush
+	HeapPage page = (HeapPage) pageMap.get(pid);
+	// Try to get the transaction id of the page to be flushed.
+	TransactionId tid = page.isDirty();
+	// If null, this means it is not dirty
+	if (tid != null) {
+	    Database.getCatalog().getDatabaseFile(pid.getTableId())
+		    .writePage(page);
+	    page.markDirty(false, tid);
+	}
     }
 
     /**
@@ -240,25 +242,26 @@ public class BufferPool {
      * dirty pages are updated on disk.
      */
     private synchronized void evictPage() throws DbException {
-    	// Decide to implement an LRU policy to evict pages
-    	try{
-    		for(int i=0; i<this.maxNumPages; i++){
-    			PageId leastRecentUsedPageId = LRU.pollFirst();
-    			HeapPage leastRecentUsedPage = (HeapPage) pageMap.get(leastRecentUsedPageId);
-    			if(leastRecentUsedPage.isDirty() == null)
-    			{
-    				this.flushPage(leastRecentUsedPageId);
-    				this.pageMap.remove(leastRecentUsedPageId);
-    				return;
-    			}
-    			else
-    				LRU.add(leastRecentUsedPageId);
-    		}
-    		
-    		throw new DbException("All pages are currently being used. Cannot evict pages");
-    	}catch(IOException e){
-    		System.out.println("Error on evicting pages");
-    	}
+	// Decide to implement an LRU policy to evict pages
+	try {
+	    for (int i = 0; i < maxNumPages; i++) {
+		PageId leastRecentUsedPageId = LRU.pollFirst();
+		HeapPage leastRecentUsedPage = (HeapPage) pageMap
+		        .get(leastRecentUsedPageId);
+		if (leastRecentUsedPage.isDirty() == null) {
+		    flushPage(leastRecentUsedPageId);
+		    pageMap.remove(leastRecentUsedPageId);
+		    return;
+		} else
+		    LRU.add(leastRecentUsedPageId);
+	    }
+
+	    throw new DbException(
+		    "All pages are currently being used. Cannot evict pages");
+	}
+	catch (IOException e) {
+	    System.out.println("Error on evicting pages");
+	}
     }
 
 }

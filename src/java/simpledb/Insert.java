@@ -58,7 +58,7 @@ public class Insert implements DbIterator {
     @Override
     public void close() {
 	opened = false;
-	fetchNext = false;
+	// fetchNext = false;
 	childDbIterator.close();
     }
 
@@ -124,6 +124,7 @@ public class Insert implements DbIterator {
     public boolean hasNext() throws DbException, TransactionAbortedException {
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
 	if (next == null)
 	    next = fetchNext();
 	return next != null;
@@ -138,6 +139,7 @@ public class Insert implements DbIterator {
 	    NoSuchElementException {
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
 	if (next == null) {
 	    next = fetchNext();
 	    if (next == null)
