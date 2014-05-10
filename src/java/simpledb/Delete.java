@@ -13,10 +13,10 @@ public class Delete implements DbIterator {
     private boolean opened = false;
     private Tuple next = null;
     private int estimatedCardinality = 0;
-
     private final TransactionId transID;
     private DbIterator childDbIterator;
     private final TupleDesc td;
+    private boolean fetchNext;
 
     /**
      * Constructor specifying the transaction that this delete belongs to as
@@ -30,7 +30,8 @@ public class Delete implements DbIterator {
     public Delete(final TransactionId t, final DbIterator child) {
 	transID = t;
 	childDbIterator = child;
-	td = new TupleDesc(new Type[] { Type.STRING_TYPE },
+	fetchNext = false;
+	td = new TupleDesc(new Type[] { Type.INT_TYPE },
 	        new String[] { "Deleted Record Counts" });
     }
 
@@ -43,6 +44,7 @@ public class Delete implements DbIterator {
     public void open() throws DbException, TransactionAbortedException {
 	opened = true;
 	childDbIterator.open();
+	fetchNext = true;
     }
 
     @Override
@@ -68,6 +70,12 @@ public class Delete implements DbIterator {
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
+	if (!fetchNext)
+	    return null;
+	else
+	    fetchNext = false;
+
 	int count = 0;
 	while (childDbIterator.hasNext()) {
 	    count++;

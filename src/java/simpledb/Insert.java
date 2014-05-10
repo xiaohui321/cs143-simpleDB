@@ -37,7 +37,7 @@ public class Insert implements DbIterator {
 	transID = t;
 	childDbIterator = child;
 	this.tableid = tableid;
-	td = new TupleDesc(new Type[] { Type.STRING_TYPE },
+	td = new TupleDesc(new Type[] { Type.INT_TYPE },
 	        new String[] { "Inserted Record Counts" });
     }
 
