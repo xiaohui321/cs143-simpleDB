@@ -50,6 +50,7 @@ public class Delete implements DbIterator {
     @Override
     public void close() {
 	opened = false;
+	fetchNext = false;
 	childDbIterator.close();
     }
 
@@ -68,14 +69,17 @@ public class Delete implements DbIterator {
      * @see BufferPool#deleteTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
+	// check open status
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
 
+	// check if fetchNext allowed
 	if (!fetchNext)
 	    return null;
 	else
 	    fetchNext = false;
 
+	// iterate through the child and create a tuple having the coutn
 	int count = 0;
 	while (childDbIterator.hasNext()) {
 	    count++;

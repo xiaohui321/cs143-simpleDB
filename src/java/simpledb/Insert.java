@@ -18,6 +18,7 @@ public class Insert implements DbIterator {
     private DbIterator childDbIterator;
     private final int tableid;
     private final TupleDesc td;
+    private boolean fetchNext;
 
     /**
      * Constructor.
@@ -37,6 +38,7 @@ public class Insert implements DbIterator {
 	transID = t;
 	childDbIterator = child;
 	this.tableid = tableid;
+	fetchNext = false;
 	td = new TupleDesc(new Type[] { Type.INT_TYPE },
 	        new String[] { "Inserted Record Counts" });
     }
@@ -49,12 +51,14 @@ public class Insert implements DbIterator {
     @Override
     public void open() throws DbException, TransactionAbortedException {
 	opened = true;
+	fetchNext = true;
 	childDbIterator.open();
     }
 
     @Override
     public void close() {
 	opened = false;
+	fetchNext = false;
 	childDbIterator.close();
     }
 
@@ -77,8 +81,17 @@ public class Insert implements DbIterator {
      * @see BufferPool#insertTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
+	// check open status
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
+	// check if fetchNext allowed
+	if (!fetchNext)
+	    return null;
+	else
+	    fetchNext = false;
+
+	// iterate through the child and create a tuple having the count
 	int count = 0;
 	while (childDbIterator.hasNext()) {
 	    count++;
