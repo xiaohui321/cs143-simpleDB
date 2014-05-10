@@ -1,7 +1,7 @@
 ==============================
 	UCLA CS143 
 	Spring 2014
-	HOMEWORK 1
+	HOMEWORK 2
 ==============================
 
 AUTHORS
@@ -14,20 +14,31 @@ ID: 204-050-387
 
 DESIGN DECISIONS
 ================
+LAB1:
 1. Created a new class "Table" storing the name, primary key and
    DbFile for that particular table.
 2. In the catalog class, we used a treeMap to store all pairs of
    <table's ID, Table>
-
+--------------------------------------------------------------------------------
+LAB2:
+1. Page eviction policy: LRU
+2. We removed the abstract class "operator" and all the classes which
+   "extends operator" are changed to "implements DbIterator".
 
 CHANGES TO THE API
 ==================
-None.
+Removed "operator".
 
 MISSING OR INCOMPLETE ELEMENTS
 ==============================
 None.
 
-TIME SPENT ON THIS PROJECT :		Approximately 10 hours
 
-DIFFICULTIES OR CONFUSING PARTS:	None
+TIME SPENT ON THIS PROJECT:
+==========================
+LAB1:	Approximately 10 hours
+LAB2:   Approximately 15 hours
+
+DIFFICULTIES OR CONFUSING PARTS
+===============================	
+None
