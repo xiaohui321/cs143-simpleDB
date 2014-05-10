@@ -2,8 +2,12 @@ package simpledb;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -21,7 +25,7 @@ public class HeapFile implements DbFile {
 
     private final File file;
     private final TupleDesc tupleDesc;
-
+    private FileChannel fileChannel;
     /**
      * Constructs a heap file backed by the specified file.
      * 
@@ -32,6 +36,14 @@ public class HeapFile implements DbFile {
     public HeapFile(final File f, final TupleDesc td) {
 	file = f;
 	tupleDesc = td;
+   	RandomAccessFile raf = null;
+	try {
+		raf = new RandomAccessFile(f, "rw");
+	} catch (FileNotFoundException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+	fileChannel = raf.getChannel();
     }
 
     /**
@@ -92,14 +104,17 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     @Override
     public void writePage(final Page page) throws IOException {
-	try {
-	    FileOutputStream fileOutputStream = new FileOutputStream(file, true);
-	    fileOutputStream.write(page.getPageData());
-	    fileOutputStream.close();
-	}
-	catch (IOException e) {
-	    e.printStackTrace();
-	}
+      	int pageNumber = page.getId().pageNumber();
+    	int offset = pageNumber * BufferPool.PAGE_SIZE;
+    	    	    	
+    	try {
+    		ByteBuffer buffer = ByteBuffer.wrap(page.getPageData());
+    		fileChannel.write(buffer, offset);
+    	} catch (IOException e) {
+    		System.out.println("error writing page: " + e);
+    		System.exit(1);
+    	}
+  
     }
 
     /**
