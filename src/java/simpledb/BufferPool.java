@@ -1,6 +1,7 @@
 package simpledb;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -145,8 +146,8 @@ public class BufferPool {
      * their markDirty bit, and updates cached versions of any pages that have
      * been dirtied so that future requests see up-to-date pages.
      * 
-     * @param tid
-     *            the transaction adding the tuple
+     * @param the
+     *            transaction adding the tuple
      * @param tableId
      *            the table to add the tuple to
      * @param t
@@ -155,8 +156,10 @@ public class BufferPool {
     public void insertTuple(final TransactionId tid, final int tableId,
 	    final Tuple t) throws DbException, IOException,
 	    TransactionAbortedException {
-	// TODO:unfinished
-	Database.getCatalog().getDatabaseFile(tableId).insertTuple(tid, t);
+	ArrayList<Page> pages = Database.getCatalog().getDatabaseFile(tableId)
+	        .insertTuple(tid, t);
+	pages.get(0).markDirty(true, tid);
+	pageMap.put(pages.get(0).getId(), pages.get(0));
     }
 
     /**
@@ -175,9 +178,10 @@ public class BufferPool {
      */
     public void deleteTuple(final TransactionId tid, final Tuple t)
 	    throws DbException, IOException, TransactionAbortedException {
-	// some code goes here
-	// not necessary for lab1
-	// TODO:unfinished
+	int id = t.getRecordId().getPageId().getTableId();
+	Page changedPage = Database.getCatalog().getDatabaseFile(id)
+	        .deleteTuple(tid, t).get(0);
+	changedPage.markDirty(true, tid);
     }
 
     /**

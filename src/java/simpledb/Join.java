@@ -114,6 +114,7 @@ public class Join implements DbIterator {
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
 	do {
+	    // get the next tuple for child 1 if necessary
 	    if (child1ShouldGetNext)
 		if (childDbIterator1.hasNext())
 		    childTuple1 = childDbIterator1.next();
@@ -121,9 +122,13 @@ public class Join implements DbIterator {
 		    childTuple1 = null;
 		    return null;
 		}
+
+	    // iterate through the child 2 and find the matching tuple
 	    while (childDbIterator2.hasNext()) {
 		Tuple childTuple2 = childDbIterator2.next();
+
 		if (joinPredicate.filter(childTuple1, childTuple2)) {
+		    // create the new tuple as the matching tuple is found
 		    Tuple newTuple = new Tuple(getTupleDesc());
 		    int i = 0, size_child1 = childTuple1.getTupleDesc()
 			    .numFields();

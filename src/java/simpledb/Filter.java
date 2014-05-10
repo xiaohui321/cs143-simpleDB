@@ -67,8 +67,11 @@ public class Filter implements DbIterator {
      */
     protected Tuple fetchNext() throws NoSuchElementException,
 	    TransactionAbortedException, DbException {
+	// check if opened or not
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
+	// iterate all tuples until find the matched one
 	while (childDbIterator.hasNext()) {
 	    Tuple tuple = childDbIterator.next();
 	    if (predicate.filter(tuple))

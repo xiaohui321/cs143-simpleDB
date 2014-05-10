@@ -58,6 +58,7 @@ public class StringAggregator implements Aggregator {
     @Override
     public void mergeTupleIntoGroup(final Tuple tup) {
 	Field keyField;
+	// create the key field based on type
 	if (groupByFieldInt == NO_GROUPING)
 	    keyField = new IntField(NO_GROUPING);
 	else {
@@ -85,6 +86,7 @@ public class StringAggregator implements Aggregator {
      */
     @Override
     public DbIterator iterator() {
+	// create iterator based on grouping status
 	if (groupByFieldInt == NO_GROUPING) {
 	    Type[] types = new Type[] { Type.INT_TYPE };
 	    String[] strings = new String[] { aggregateFieldName };

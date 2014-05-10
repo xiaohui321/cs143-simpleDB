@@ -45,6 +45,8 @@ public class Aggregate implements DbIterator {
 	operator = aop;
 	Type groupByfieldType = groupByFieldInt == Aggregator.NO_GROUPING ? null
 	        : childDbIterator.getTupleDesc().getFieldType(groupByFieldInt);
+
+	// create aggregator based on type
 	if (childDbIterator.getTupleDesc().getFieldType(aggregateFieldInt) == Type.STRING_TYPE)
 	    aggregator = new StringAggregator(groupByFieldInt,
 		    groupByfieldType, aggregateFieldInt, operator);
@@ -120,10 +122,14 @@ public class Aggregate implements DbIterator {
      * aggregate. Should return null if there are no more tuples.
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
+	// check open satatus
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
+	// sanity check
 	if (aggregateIterator == null)
 	    throw new DbException("open() not called yet");
+
 	if (aggregateIterator.hasNext())
 	    return aggregateIterator.next();
 	else
@@ -153,10 +159,12 @@ public class Aggregate implements DbIterator {
 	if (aggregateFieldInt == Aggregator.NO_GROUPING) {
 	    Type[] type = new Type[] { childDbIterator.getTupleDesc()
 		    .getFieldType(aggregateFieldInt) };
+
 	    String[] name = new String[] { operator.toString()
 		    + "("
 		    + childDbIterator.getTupleDesc().getFieldName(
 		            aggregateFieldInt) + ")" };
+
 	    return new TupleDesc(type, name);
 	} else {
 	    Type[] type = new Type[] {
@@ -164,6 +172,7 @@ public class Aggregate implements DbIterator {
 		            .getFieldType(groupByFieldInt),
 		    childDbIterator.getTupleDesc().getFieldType(
 		            aggregateFieldInt) };
+
 	    String[] name = new String[] {
 		    childDbIterator.getTupleDesc()
 		            .getFieldName(groupByFieldInt),
@@ -197,8 +206,10 @@ public class Aggregate implements DbIterator {
      */
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
+	// check open status
 	if (!opened)
 	    throw new IllegalStateException("Operator not yet open");
+
 	if (next == null)
 	    next = fetchNext();
 	return next != null;

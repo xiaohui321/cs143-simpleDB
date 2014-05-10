@@ -78,6 +78,8 @@ public class IntegerAggregator implements Aggregator {
     public void mergeTupleIntoGroup(final Tuple tup) {
 	Field keyField;
 	aggregateFieldName = tup.getTupleDesc().getFieldName(aggregateFieldInt);
+
+	// create the key field based on type
 	if (groupByFieldInt == NO_GROUPING)
 	    keyField = new IntField(NO_GROUPING);
 	else {
@@ -88,9 +90,12 @@ public class IntegerAggregator implements Aggregator {
 	IntField tupleCorrespondingValueField = (IntField) tup
 	        .getField(aggregateFieldInt);
 	int newValue = 0;
+
+	// do grouping based on the operator
 	switch (operator) {
 	    case AVG:
 		if (valueField == null) {
+		    // the initial setup for getting average.
 		    Average newAverage = new Average();
 		    newValue = tupleCorrespondingValueField.getValue();
 		    newAverage.addNewItem(newValue);
@@ -146,6 +151,7 @@ public class IntegerAggregator implements Aggregator {
      */
     @Override
     public DbIterator iterator() {
+	// create iterator based on grouping status
 	if (groupByFieldInt == NO_GROUPING) {
 	    Type[] types = new Type[] { Type.INT_TYPE };
 	    String[] strings = new String[] { aggregateFieldName };
@@ -155,6 +161,7 @@ public class IntegerAggregator implements Aggregator {
 	    List<Tuple> tupleList = new ArrayList<Tuple>();
 	    tupleList.add(tuple);
 	    return new TupleIterator(tupleDesc, tupleList);
+
 	} else {
 	    Type[] types = new Type[] { groupByFieldType, Type.INT_TYPE };
 	    String[] strings = new String[] { groupByFieldName,

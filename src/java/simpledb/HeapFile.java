@@ -120,7 +120,6 @@ public class HeapFile implements DbFile {
 	    return newPage;
 	}
 	catch (IOException e) {
-	    // TODO Auto-generated catch block
 	    e.printStackTrace();
 	}
 
@@ -145,16 +144,15 @@ public class HeapFile implements DbFile {
 	}
 
 	// Insert tuples
-	if (!emptyPage.hasFreeSlots()) // No empty page exists
-	{
+	// No empty page exists
+	if (!emptyPage.hasFreeSlots()) {
 	    HeapPage newPage = createNewPage();
 	    newPage = (HeapPage) Database.getBufferPool().getPage(tid,
 		    newPage.getId(), Permissions.READ_WRITE);
 	    newPage.insertTuple(t);
 	    newPage.markDirty(true, tid);
 	    modifiedPages.add(newPage);
-	} else  // Empty page exists
-	{
+	} else {  // Empty page exists
 	    HeapPage newPage = (HeapPage) Database.getBufferPool().getPage(tid,
 		    emptyPage.getId(), Permissions.READ_WRITE);
 	    newPage.insertTuple(t);
