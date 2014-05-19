@@ -18,22 +18,15 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class Catalog {
 	
-	private Vector<DbFile> fileItself;
-	private Vector<String> fileName;
-	private Vector<String> fileKey;
-	private Vector<Integer> fileId;
+	private HashMap<Integer, Vector<Object>> tableMap;
+
     /**
      * Constructor.
      * Creates a new, empty catalog.
      */
-    
-	public Catalog()
-	{
-		fileItself = new Vector<DbFile>();
-		fileName = new Vector<String>();
-		fileKey = new Vector<String>();
-		fileId = new Vector<Integer>();
-	}
+    public Catalog() {
+        tableMap = new HashMap<Integer, Vector<Object>>();
+    }
 
     /**
      * Add a new table to the catalog.
@@ -45,26 +38,33 @@ public class Catalog {
      * conflict exists, use the last table to be added as the table for a given name.
      */
     public void addTable(DbFile file, String name, String pkeyField) {
-    	
-    	if(fileId.contains(file.getId()))
-    	{
-    		int index = fileId.indexOf(file.getId());
-   			fileItself.set(index, file);
-    		fileName.set(index, name);
-    		fileKey.set(index, pkeyField);
-   		}
+    	/* I will first check whether the name is valid*/
+    	if(name == null)
+    		throw new IllegalArgumentException("Null string is invalid");
     	else
     	{
-   			fileItself.add(file);
-   			fileName.add(name);
-    		fileId.add(file.getId());
-    		fileKey.add(pkeyField);
+    		Vector<Object> table = new Vector<Object>();
+    		table.add(file);
+    		table.add(name);
+    		table.add(pkeyField);
+    		
+    		/* Then I will resolve the conflicts*/
+    		for(int i=0; i<tableMap.size(); i++)
+    		{
+    			Vector<Object> tmpVec = new Vector<Object>(tableMap.get(i).size());
+    			for(int j=0; j<tmpVec.size(); j++)
+    			{
+    				if(tmpVec.get(1).equals(name))
+    				{
+    					tableMap.remove(((DbFile) tmpVec.get(0)).getId());
+    					break;
+    				}
+    			}
+    		}
+    		tableMap.put(file.getId(), table);
     	}
-    	
-    	return;
     }
-    
-    
+
     public void addTable(DbFile file, String name) {
         addTable(file, name, "");
     }
@@ -84,11 +84,22 @@ public class Catalog {
      * Return the id of the table with a specified name,
      * @throws NoSuchElementException if the table doesn't exist
      */
-    public int getTableId(String name) throws NoSuchElementException {    	
-    	if(fileName.contains(name))
-    		return fileId.get(fileName.indexOf(name));
-    	else
-    		throw new NoSuchElementException("The name does not exist!");
+    public int getTableId(String name) throws NoSuchElementException {
+    	
+    	/*Check the name is valid or not*/
+    	if(name == null)
+    		throw new IllegalArgumentException("Null string is invalid");
+    
+    	for(int i=0; i<tableMap.size(); i++)
+    	{
+    		String tmpStr = (String)tableMap.get(i).get(1);
+    		if(tmpStr.equals(name))
+    		{
+    			DbFile tmpFile = (DbFile)tableMap.get(i).get(0);			//type cast the object to DbFile
+    			return tmpFile.getId();
+    		}
+    	}
+    	throw new NoSuchElementException("No such element: " + name);
     }
 
     /**
@@ -98,13 +109,13 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
-    	if(fileId.contains(tableid))
-    	{
-    		DbFile tmpFile = fileItself.get(fileId.indexOf(tableid));
-    		return tmpFile.getTupleDesc();
-    	}
-    	else
-    		throw new NoSuchElementException("The tableid does not exist!");
+    	if(tableid < 0 || tableid >= tableMap.size())
+    		throw new IllegalArgumentException("tableid out of bound or negative: " + tableid);		//check the valid tableid
+    	
+    	Vector<Object> tmpVec = tableMap.get(tableid);
+    	DbFile tmpFile = (DbFile)tmpVec.get(0);						// 0 column means the DBFile column
+    	
+    	return tmpFile.getTupleDesc();
     }
 
     /**
@@ -114,36 +125,45 @@ public class Catalog {
      *     function passed to addTable
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
-    	if(fileId.contains(tableid))
-    		return fileItself.get(fileId.indexOf(tableid));
-    	else
-    		throw new NoSuchElementException("The tableid does not exist!");
+    	if(tableid < 0 || tableid >= tableMap.size())
+    		throw new IllegalArgumentException("tableid out of bound or negative: " + tableid);		//check the valid tableid
+    	
+    	Vector<Object> tmpVec = tableMap.get(tableid);
+    	if(tmpVec == null)
+    		throw new NoSuchElementException("No Such Element");	
+    	
+    	return (DbFile)tmpVec.get(0);
     }
 
     public String getPrimaryKey(int tableid) {
-    	if(fileId.contains(tableid))
-    		return fileKey.get(fileId.indexOf(tableid));
-    	else
-    		throw new NoSuchElementException("The tableid does not exist!");
+    	if(tableid < 0 || tableid >= tableMap.size())
+    		throw new IllegalArgumentException("tableid out of bound or negative: " + tableid);		//check the valid tableid
+    	
+    	Vector<Object> tmpVec = tableMap.get(tableid);
+    	if(tmpVec == null)
+    		throw new NoSuchElementException("No Such Element: id = "+ tableid);	
+    	
+    	return (String)tmpVec.get(2);
     }
 
     public Iterator<Integer> tableIdIterator() {
-        return fileId.iterator();
+        return tableMap.keySet().iterator();			//return the iterator
     }
 
     public String getTableName(int id) {
-    	if(fileId.contains(id))
-    		return fileName.get(fileId.indexOf(id));
-    	else
-    		throw new NoSuchElementException("The tableid does not exist!");
+    	if(id < 0 || id >= tableMap.size())
+    		throw new IllegalArgumentException("tableid out of bound or negative: " + id);			//check the valid tableid
+    	
+    	Vector<Object> tmpVec = tableMap.get(id);
+    	if(tmpVec == null)
+    		throw new NoSuchElementException("No Such Element: id = "+ id);							//check if the content is null
+    	
+    	return (String)tmpVec.get(1);
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
-    	fileItself.clear();
-    	fileName.clear();
-    	fileKey.clear();
-    	fileId.clear();
+    	tableMap.clear();
     }
     
     /**

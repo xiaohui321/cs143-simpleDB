@@ -9,6 +9,10 @@ import java.io.Serializable;
 public class JoinPredicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    
+    private int firstIndex;
+    private int secondIndex;
+    private Predicate.Op operator;
 
     /**
      * Constructor -- create a new predicate over two fields of two tuples.
@@ -17,21 +21,18 @@ public class JoinPredicate implements Serializable {
      *            The field index into the first tuple in the predicate
      * @param field2
      *            The field index into the second tuple in the predicate
-     * @param operator
+     * @param op
      *            The operation to apply (as defined in Predicate.Op); either
      *            Predicate.Op.GREATER_THAN, Predicate.Op.LESS_THAN,
      *            Predicate.Op.EQUAL, Predicate.Op.GREATER_THAN_OR_EQ, or
      *            Predicate.Op.LESS_THAN_OR_EQ
      * @see Predicate
      */
-    private final int fieldNum1, fieldNum2;
-    private final Predicate.Op operator;
-
-    public JoinPredicate(final int field1, final Predicate.Op op,
-	    final int field2) {
-	fieldNum1 = field1;
-	fieldNum2 = field2;
-	operator = op;
+    public JoinPredicate(int field1, Predicate.Op op, int field2) {
+        // some code goes here
+    	firstIndex=field1;
+    	secondIndex=field2;
+    	operator=op;
     }
 
     /**
@@ -40,19 +41,26 @@ public class JoinPredicate implements Serializable {
      * 
      * @return true if the tuples satisfy the predicate.
      */
-    public boolean filter(final Tuple t1, final Tuple t2) {
-	return t1.getField(fieldNum1).compare(operator, t2.getField(fieldNum2));
+    public boolean filter(Tuple t1, Tuple t2) {
+        // some code goes here
+        return t1.getField(firstIndex).compare(operator,t2.getField(secondIndex) );
     }
-
-    public int getField1() {
-	return fieldNum1;
+    
+    public int getField1()
+    {
+        // some code goes here
+        return firstIndex;
     }
-
-    public int getField2() {
-	return fieldNum2;
+    
+    public int getField2()
+    {
+        // some code goes here
+        return secondIndex;
     }
-
-    public Predicate.Op getOperator() {
-	return operator;
+    
+    public Predicate.Op getOperator()
+    {
+        // some code goes here
+        return operator;
     }
 }

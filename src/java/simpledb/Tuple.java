@@ -3,7 +3,9 @@ package simpledb;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.List;
+
+import simpledb.TupleDesc.TDItem;
 
 /**
  * Tuple maintains information about the contents of a tuple. Tuples have a
@@ -14,14 +16,11 @@ public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private TupleDesc tuple_desc;
-
-    private RecordId id;
-
-    private Field[] tuple_values;
-
-    private int size_tuple;
-
+    //create a new private variable
+    private TupleDesc tDesc;
+    private Field[] fieldObj;    
+    private RecordId recordId;
+    
     /**
      * Create a new tuple with the specified schema (type).
      * 
@@ -29,18 +28,27 @@ public class Tuple implements Serializable {
      *            the schema of this tuple. It must be a valid TupleDesc
      *            instance with at least one field.
      */
-    public Tuple(final TupleDesc td) {
-	tuple_desc = td;
-	id = null;
-	size_tuple = tuple_desc.numFields();
-	tuple_values = new Field[size_tuple];
+    public Tuple(TupleDesc td) {
+        // some code goes here
+    	/* I will check the TupleDesc whether it meets the standard */
+    	
+    	if(td.numFields() < 1)
+    		throw new IllegalArgumentException(td.toString());
+    	
+    	/* then just initialize all the variables*/
+    	
+    	tDesc = td;
+    	fieldObj = new Field[td.numFields()];
+    	recordId = null;
     }
 
     /**
      * @return The TupleDesc representing the schema of this tuple.
      */
     public TupleDesc getTupleDesc() {
-	return tuple_desc;
+        // some code goes here
+    	
+        return tDesc;
     }
 
     /**
@@ -48,7 +56,7 @@ public class Tuple implements Serializable {
      *         be null.
      */
     public RecordId getRecordId() {
-	return id;
+        return recordId;
     }
 
     /**
@@ -57,8 +65,8 @@ public class Tuple implements Serializable {
      * @param rid
      *            the new RecordId for this tuple.
      */
-    public void setRecordId(final RecordId rid) {
-	id = rid;
+    public void setRecordId(RecordId rid) {
+    	recordId = rid;
     }
 
     /**
@@ -69,12 +77,17 @@ public class Tuple implements Serializable {
      * @param f
      *            new value for the field.
      */
-    public void setField(final int i, final Field f)
-	    throws NoSuchElementException {
-	if (i < 0 || i >= size_tuple)
-	    throw new NoSuchElementException("Invalid index");
-
-	tuple_values[i] = f;
+    public void setField(int i, Field f) {
+        // some code goes here
+    	/* I will check if the index is valid or not*/
+    	//if(i >= fieldObj.length || i<0)
+    	//	throw new IllegalArgumentException("Invalid input, either out of bound or smaller than 0");
+    	
+    	/* Then I will find the field according to the index and insert in the new value*/
+    	//if(f.getType().equals(fieldObj[i].getType()))
+    		fieldObj[i] = f;
+    	//else
+    	//	throw new IllegalArgumentException("Input has different type");
     }
 
     /**
@@ -83,11 +96,13 @@ public class Tuple implements Serializable {
      * @param i
      *            field index to return. Must be a valid index.
      */
-    public Field getField(final int i) {
-	if (i < 0 || i >= size_tuple)
-	    throw new NoSuchElementException("Invalid index");
-
-	return tuple_values[i];
+    public Field getField(int i) {
+        // some code goes here
+    	/* I will check if the index is out of bound first*/
+    	if(i >= fieldObj.length || i<0)
+    		throw new IllegalArgumentException("Invalid input, either out of bound or smaller than 0");
+    	 	
+        return fieldObj[i];
     }
 
     /**
@@ -98,28 +113,44 @@ public class Tuple implements Serializable {
      * 
      * where \t is any whitespace, except newline, and \n is a newline
      */
-    @Override
     public String toString() {
-	String result = "";
-	for (int i = 0; i < size_tuple - 1; i++)
-	    result += tuple_values[i] + "\t";
-	result += tuple_values[size_tuple - 1] + "\n";
-	return result;
+    	
+    	String result = "";
+    	for(int i=0; i<fieldObj.length; i++)
+    	{
+    		String tmp = "";
+    		if(i == fieldObj.length-1)
+    			tmp = fieldObj[i] + "\n";
+    		else
+    			tmp = fieldObj[i] + "\t";
+    		
+    		result+=tmp;
+    	}
+    	
+    	return result;
+    	
+        // throw new UnsupportedOperationException("Implement this");
     }
-
+    
     /**
-     * @return An iterator which iterates over all the fields of this tuple
+     * @return
+     *        An iterator which iterates over all the fields of this tuple
      * */
-    public Iterator<Field> fields() {
-	return Arrays.asList(tuple_values).iterator();
+    public Iterator<Field> fields()
+    {   	
+    	/* I will first change the array into a list, and then use iterator directly*/
+    	List<Field> fList = Arrays.asList(fieldObj);
+    	Iterator<Field> iter = fList.iterator();
+
+        return iter;
     }
-
+    
     /**
-     * reset the TupleDesc of this tuple
+     * reset the TupleDesc of thi tuple
      * */
-    public void resetTupleDesc(final TupleDesc td) {
-	tuple_desc = td;
-	size_tuple = tuple_desc.numFields();
-	tuple_values = new Field[size_tuple];
+    public void resetTupleDesc(TupleDesc td)
+    {
+        // some code goes here
+    	tDesc = td;
     }
 }

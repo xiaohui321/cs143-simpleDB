@@ -11,44 +11,43 @@ public class Predicate implements Serializable {
 
     /** Constants used for return codes in Field.compare */
     public enum Op implements Serializable {
-	EQUALS, GREATER_THAN, LESS_THAN, LESS_THAN_OR_EQ, GREATER_THAN_OR_EQ, LIKE, NOT_EQUALS;
+        EQUALS, GREATER_THAN, LESS_THAN, LESS_THAN_OR_EQ, GREATER_THAN_OR_EQ, LIKE, NOT_EQUALS;
 
-	/**
-	 * Interface to access operations by integer value for command-line
-	 * convenience.
-	 * 
-	 * @param i
-	 *            a valid integer Op index
-	 */
-	public static Op getOp(final int i) {
-	    return values()[i];
-	}
+        /**
+         * Interface to access operations by integer value for command-line
+         * convenience.
+         * 
+         * @param i
+         *            a valid integer Op index
+         */
+        public static Op getOp(int i) {
+            return values()[i];
+        }
 
-	@Override
-	public String toString() {
-	    if (this == EQUALS)
-		return "=";
-	    if (this == GREATER_THAN)
-		return ">";
-	    if (this == LESS_THAN)
-		return "<";
-	    if (this == LESS_THAN_OR_EQ)
-		return "<=";
-	    if (this == GREATER_THAN_OR_EQ)
-		return ">=";
-	    if (this == LIKE)
-		return "LIKE";
-	    if (this == NOT_EQUALS)
-		return "<>";
-	    throw new IllegalStateException("impossible to reach here");
-	}
+        public String toString() {
+            if (this == EQUALS)
+                return "=";
+            if (this == GREATER_THAN)
+                return ">";
+            if (this == LESS_THAN)
+                return "<";
+            if (this == LESS_THAN_OR_EQ)
+                return "<=";
+            if (this == GREATER_THAN_OR_EQ)
+                return ">=";
+            if (this == LIKE)
+                return "LIKE";
+            if (this == NOT_EQUALS)
+                return "<>";
+            throw new IllegalStateException("impossible to reach here");
+        }
 
     }
-
-    private final int fieldNum;
-    private final Predicate.Op operator;
-    private final Field operandField;
-
+    
+    private int m_field;
+    private Op m_op;
+    private Field m_operand;
+    
     /**
      * Constructor.
      * 
@@ -59,33 +58,40 @@ public class Predicate implements Serializable {
      * @param operand
      *            field value to compare passed in tuples to
      */
-    public Predicate(final int field, final Op op, final Field operand) {
-	fieldNum = field;
-	operator = op;
-	operandField = operand;
+    public Predicate(int field, Op op, Field operand) {
+        // some code goes here
+    	m_field=field;
+    	m_op=op;
+    	m_operand=operand;
     }
 
     /**
      * @return the field number
      */
-    public int getField() {
-	return fieldNum;
+    public int getField()
+    {
+        // some code goes here
+        return m_field;
     }
 
     /**
      * @return the operator
      */
-    public Op getOp() {
-	return operator;
+    public Op getOp()
+    {
+        // some code goes here
+        return m_op;
     }
-
+    
     /**
      * @return the operand
      */
-    public Field getOperand() {
-	return operandField;
+    public Field getOperand()
+    {
+        // some code goes here
+        return m_operand;
     }
-
+    
     /**
      * Compares the field number of t specified in the constructor to the
      * operand field specified in the constructor using the operator specific in
@@ -96,17 +102,18 @@ public class Predicate implements Serializable {
      *            The tuple to compare against
      * @return true if the comparison is true, false otherwise.
      */
-    public boolean filter(final Tuple t) {
-	return t.getField(fieldNum).compare(operator, operandField);
+    public boolean filter(Tuple t) {
+        // some code goes here
+        return t.getField(m_field).compare(m_op, m_operand);
     }
 
     /**
      * Returns something useful, like "f = field_id op = op_string operand =
      * operand_string
      */
-    @Override
     public String toString() {
-	return "f = " + fieldNum + " op = \"" + operator.toString()
-	        + "\" operand = " + operandField.toString();
+        // some code goes here
+          return "f = " + m_field + " op = " + m_op.toString() + "operand = " + m_operand.toString();
+
     }
 }

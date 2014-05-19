@@ -1,25 +1,21 @@
 package simpledb;
 
 import java.io.IOException;
-import java.util.NoSuchElementException;
 
 /**
  * Inserts tuples read from the child operator into the tableid specified in the
  * constructor
  */
-public class Insert implements DbIterator {
+public class Insert extends Operator {
 
     private static final long serialVersionUID = 1L;
-    private boolean opened = false;
-    private Tuple next = null;
-    private int estimatedCardinality = 0;
-
-    private final TransactionId transID;
-    private DbIterator childDbIterator;
-    private final int tableid;
-    private final TupleDesc td;
-    private boolean fetchNext;
-
+    
+    private DbIterator dbIt;
+    private int tableId;
+    private TransactionId tranId;
+    private TupleDesc td;
+    private int fetchNextNum;
+    
     /**
      * Constructor.
      * 
@@ -33,38 +29,52 @@ public class Insert implements DbIterator {
      *             if TupleDesc of child differs from table into which we are to
      *             insert.
      */
-    public Insert(final TransactionId t, final DbIterator child,
-	    final int tableid) throws DbException {
-	transID = t;
-	childDbIterator = child;
-	this.tableid = tableid;
-	fetchNext = false;
-	td = new TupleDesc(new Type[] { Type.INT_TYPE },
-	        new String[] { "Inserted Record Counts" });
+    public Insert(TransactionId t,DbIterator child, int tableid)
+            throws DbException {
+        // some code goes here
+    	dbIt = child;
+    	tranId = t;
+    	tableId = tableid;  
+    	Type[] tdType = new Type[]{Type.INT_TYPE};
+    	String[] tdStr = new String[]{"Numbers of tuple inserted"};
+    	td = new TupleDesc(tdType, tdStr); 	
+    	fetchNextNum = 0;
+    	
     }
 
-    @Override
     public TupleDesc getTupleDesc() {
-	return td;
+        return td;
     }
 
-    @Override
     public void open() throws DbException, TransactionAbortedException {
-	opened = true;
-	fetchNext = true;
-	childDbIterator.open();
+    	try{
+	    	super.open();
+	        dbIt.open();
+    	} catch (DbException e)
+    	{
+    		e.printStackTrace();
+    	} catch (TransactionAbortedException e)
+    	{
+    		e.printStackTrace();
+    	}
     }
 
-    @Override
     public void close() {
-	opened = false;
-	// fetchNext = false;
-	childDbIterator.close();
+    	dbIt.close();
+    	super.close();
     }
 
-    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-	childDbIterator.rewind();
+        try
+        {
+        	dbIt.rewind();
+        } catch (DbException e)
+    	{
+    		e.printStackTrace();
+    	} catch (TransactionAbortedException e)
+    	{
+    		e.printStackTrace();
+    	}
     }
 
     /**
@@ -81,90 +91,49 @@ public class Insert implements DbIterator {
      * @see BufferPool#insertTuple
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-	// check open status
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-
-	// check if fetchNext allowed
-	if (!fetchNext)
-	    return null;
-	else
-	    fetchNext = false;
-
-	// iterate through the child and create a tuple having the count
-	int count = 0;
-	while (childDbIterator.hasNext()) {
-	    count++;
-	    Tuple tuple = childDbIterator.next();
-	    try {
-		Database.getBufferPool().insertTuple(transID, tableid, tuple);
-	    }
-	    catch (IOException e) {
-		e.printStackTrace();
-	    }
-	}
-	Tuple returnTuple = new Tuple(td);
-	returnTuple.setField(0, new IntField(count));
-	return returnTuple;
+    	Tuple result = new Tuple(td);				// use to store the insertion result
+    	int count = 0;								// use to keep track of numbers of tuple insertion
+    	
+    	if(fetchNextNum > 0)						// meaning this is not the first time calling fetchNext(), and should not return any tuples
+    		return null;
+    	else
+    	{
+    		try
+    		{
+		    	while(dbIt.hasNext())
+		    	{
+		    		try
+		    		{
+		    			Database.getBufferPool().insertTuple(tranId, tableId, dbIt.next());
+		    		} catch(IOException e)
+		    		{
+		    			e.printStackTrace();
+		    		}
+		    		count++;
+		    	}
+	    	
+		    	result.setField(0, new IntField(count));
+		    	fetchNextNum++;
+    		} catch (DbException e)
+    		{
+    			e.printStackTrace();
+    		} catch (TransactionAbortedException e)
+    		{
+    			e.printStackTrace();
+    		}
+    	}
+    	return result;
+    	
     }
+   
 
+    @Override
     public DbIterator[] getChildren() {
-	return new DbIterator[] { childDbIterator };
+        return new DbIterator[]{dbIt};
     }
 
-    public void setChildren(final DbIterator[] children) {
-	childDbIterator = children[0];
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#hasNext()
-     */
     @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException {
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-
-	if (next == null)
-	    next = fetchNext();
-	return next != null;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#next()
-     */
-    @Override
-    public Tuple next() throws DbException, TransactionAbortedException,
-	    NoSuchElementException {
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-
-	if (next == null) {
-	    next = fetchNext();
-	    if (next == null)
-		throw new NoSuchElementException();
-	}
-
-	Tuple result = next;
-	next = null;
-	return result;
-    }
-
-    /**
-     * @return The estimated cardinality of this operator. Will only be used in
-     *         lab6
-     * */
-    public int getEstimatedCardinality() {
-	return estimatedCardinality;
-    }
-
-    /**
-     * @param card
-     *            The estimated cardinality of this operator Will only be used
-     *            in lab6
-     * */
-    protected void setEstimatedCardinality(final int card) {
-	estimatedCardinality = card;
+    public void setChildren(DbIterator[] children) {
+        dbIt = children[0];
     }
 }

@@ -9,11 +9,9 @@ import java.io.Serializable;
 public class RecordId implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    private final int tupleNum;
-
-    private final PageId pid;
-
+    private PageId pageId;
+    private int tupleNum;
+    
     /**
      * Creates a new RecordId referring to the specified PageId and tuple
      * number.
@@ -23,23 +21,26 @@ public class RecordId implements Serializable {
      * @param tupleno
      *            the tuple number within the page.
      */
-    public RecordId(final PageId pid, final int tupleno) {
-	this.pid = pid;
-	tupleNum = tupleno;
+    public RecordId(PageId pid, int tupleno) {
+        // some code goes here
+    	pageId = pid;
+    	tupleNum = tupleno;
     }
 
     /**
      * @return the tuple number this RecordId references.
      */
     public int tupleno() {
-	return tupleNum;
+        // some code goes here
+        return tupleNum;
     }
 
     /**
      * @return the page id this RecordId references.
      */
     public PageId getPageId() {
-	return pid;
+        // some code goes here
+        return pageId;
     }
 
     /**
@@ -49,20 +50,15 @@ public class RecordId implements Serializable {
      * @return True if this and o represent the same tuple
      */
     @Override
-    public boolean equals(final Object o) {
-	/* check argument type */
-	if (!(o instanceof RecordId))
-	    return false;
-
-	RecordId obj = (RecordId) o;
-
-	if (obj.tupleno() != tupleNum)
-	    return false;
-
-	if (!obj.getPageId().equals(pid))
-	    return false;
-
-	return true;
+    public boolean equals(Object o) {
+        // some code goes here
+    	if(o!=null && o instanceof RecordId)					// test if o is an Tuple instance
+    	{
+    		RecordId tmpRecId = (RecordId)o;
+    		if(this.pageId.equals(tmpRecId.pageId) && (this.tupleNum == tmpRecId.tupleNum))
+    			return true; 		
+    	}
+    	return false;
     }
 
     /**
@@ -73,8 +69,8 @@ public class RecordId implements Serializable {
      */
     @Override
     public int hashCode() {
-	return pid.hashCode() + tupleNum * 10000;
-
+        // some code goes here
+    	return Integer.parseInt(pageId.hashCode()+tupleNum +"");
     }
 
 }

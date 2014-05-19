@@ -1,6 +1,8 @@
 package simpledb;
 
-import java.util.NoSuchElementException;
+import java.util.*;
+
+import simpledb.TupleDesc.TDItem;
 
 /**
  * SeqScan is an implementation of a sequential scan access method that reads
@@ -10,13 +12,11 @@ import java.util.NoSuchElementException;
 public class SeqScan implements DbIterator {
 
     private static final long serialVersionUID = 1L;
-
-    private final TransactionId seqTransId;
-    private String seqTableAlias;
-    private int seqTableId;
-    private final HeapFile seqFile;
-    private HeapFileIterator seqFileIterator;
-
+    
+    private TransactionId tidItself;
+    private int tableIdItself;
+    private String tAlias;
+    private DbFileIterator iterItself;
     /**
      * Creates a sequential scan over the specified table as a part of the
      * specified transaction.
@@ -33,34 +33,33 @@ public class SeqScan implements DbIterator {
      *            are, but the resulting name can be null.fieldName,
      *            tableAlias.null, or null.null).
      */
-    public SeqScan(final TransactionId tid, final int tableid,
-	    final String tableAlias) {
-	seqTransId = tid;
-	seqTableId = tableid;
-	seqTableAlias = tableAlias;
-	seqFile = (HeapFile) Database.getCatalog().getDatabaseFile(seqTableId);
-	seqFileIterator = null;
+    public SeqScan(TransactionId tid, int tableid, String tableAlias) {
+        // some code goes here
+    	tidItself = tid;
+    	tableIdItself = tableid;
+    	tAlias = tableAlias;
     }
 
     /**
-     * @return return the table name of the table the operator scans. This
-     *         should be the actual name of the table in the catalog of the
-     *         database
+     * @return
+     *       return the table name of the table the operator scans. This should
+     *       be the actual name of the table in the catalog of the database
      * */
     public String getTableName() {
-	return Database.getCatalog().getTableName(seqTableId);
+        return Database.getCatalog().getTableName(tableIdItself);
     }
-
+    
     /**
-     * @return Return the alias of the table this operator scans.
+     * @return Return the alias of the table this operator scans. 
      * */
-    public String getAlias() {
-	return seqTableAlias;
+    public String getAlias()
+    {
+        // some code goes here
+        return tAlias;
     }
 
     /**
      * Reset the tableid, and tableAlias of this operator.
-     * 
      * @param tableid
      *            the table to scan.
      * @param tableAlias
@@ -71,19 +70,20 @@ public class SeqScan implements DbIterator {
      *            are, but the resulting name can be null.fieldName,
      *            tableAlias.null, or null.null).
      */
-    public void reset(final int tableid, final String tableAlias) {
-	seqTableId = tableid;
-	seqTableAlias = tableAlias;
+    public void reset(int tableid, String tableAlias) {
+        // some code goes here
+    	tableIdItself = tableid;
+    	tAlias = tableAlias;
     }
 
-    public SeqScan(final TransactionId tid, final int tableid) {
-	this(tid, tableid, Database.getCatalog().getTableName(tableid));
+    public SeqScan(TransactionId tid, int tableid) {
+        this(tid, tableid, Database.getCatalog().getTableName(tableid));
     }
 
-    @Override
     public void open() throws DbException, TransactionAbortedException {
-	seqFileIterator = (HeapFileIterator) seqFile.iterator(seqTransId);
-	seqFileIterator.open();
+        // some code goes here
+    	iterItself = Database.getCatalog().getDatabaseFile(tableIdItself).iterator(tidItself);		//get the DbFile iterator from the database with tid
+    	iterItself.open();
     }
 
     /**
@@ -95,30 +95,45 @@ public class SeqScan implements DbIterator {
      * @return the TupleDesc with field names from the underlying HeapFile,
      *         prefixed with the tableAlias string from the constructor.
      */
-    @Override
     public TupleDesc getTupleDesc() {
-	return Database.getCatalog().getTupleDesc(seqTableId);
+        // some code goes here
+    	
+    	TupleDesc tmpTd = Database.getCatalog().getTupleDesc(tableIdItself);			//get the original tupleDesc
+    	Type[] tmpType = new Type[tmpTd.numFields()];									
+    	String[] tmpStr = new String[tmpTd.numFields()];
+    	
+    	Iterator<TDItem> iter = tmpTd.iterator();
+    	int i=0;
+    	while(iter.hasNext())
+    	{
+    		TDItem tmpItem = iter.next();
+    		tmpType[i] = tmpItem.fieldType;
+    		tmpStr[i] = tAlias + "." + tmpItem.fieldName;									//for every TDItem in the TupleDesc, and the alias to the item name
+    		i++;		
+    	}
+    	TupleDesc newTd = new TupleDesc(tmpType, tmpStr);									//construct a new tupleDesc with the new TDItem names (with alias)
+    	return newTd;
     }
 
-    @Override
     public boolean hasNext() throws TransactionAbortedException, DbException {
-	return seqFileIterator.hasNext();
+        // some code goes here 
+        return iterItself.hasNext();
     }
 
-    @Override
     public Tuple next() throws NoSuchElementException,
-	    TransactionAbortedException, DbException {
-	return seqFileIterator.next();
+            TransactionAbortedException, DbException {
+        // some code goes here
+        return iterItself.next();
     }
 
-    @Override
     public void close() {
-	seqFileIterator.close();
+        // some code goes here
+    	iterItself.close();
     }
 
-    @Override
     public void rewind() throws DbException, NoSuchElementException,
-	    TransactionAbortedException {
-	seqFileIterator.rewind();
+            TransactionAbortedException {
+        // some code goes here
+    	iterItself.rewind();
     }
 }

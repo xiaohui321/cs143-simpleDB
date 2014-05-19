@@ -1,19 +1,16 @@
 package simpledb;
 
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Filter is an operator that implements a relational select.
  */
-public class Filter implements DbIterator {
+public class Filter extends Operator {
 
     private static final long serialVersionUID = 1L;
-    private boolean opened = false;
-    private Tuple next = null;
-    private int estimatedCardinality = 0;
-    private final Predicate predicate;
-    private DbIterator childDbIterator;
 
+    private Predicate m_predicate;
+    private DbIterator m_child;
     /**
      * Constructor accepts a predicate to apply and a child operator to read
      * tuples to filter from.
@@ -23,37 +20,38 @@ public class Filter implements DbIterator {
      * @param child
      *            The child operator
      */
-    public Filter(final Predicate p, final DbIterator child) {
-	predicate = p;
-	childDbIterator = child;
+    public Filter(Predicate p, DbIterator child) {
+        // some code goes here
+    	m_predicate=p;
+    	m_child=child;
     }
 
     public Predicate getPredicate() {
-	return predicate;
+        // some code goes here
+        return m_predicate;
     }
 
-    @Override
     public TupleDesc getTupleDesc() {
-	return childDbIterator.getTupleDesc();
+        // some code goes here
+        return m_child.getTupleDesc();
     }
 
-    @Override
     public void open() throws DbException, NoSuchElementException,
-	    TransactionAbortedException {
-	opened = true;
-	childDbIterator.open();
+            TransactionAbortedException {
+        // some code goes here
+    	m_child.open();
+    	super.open();
     }
 
-    @Override
     public void close() {
-	next = null;
-	opened = false;
-	childDbIterator.close();
+        // some code goes here
+    	super.close();
+    	m_child.close();
     }
 
-    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-	childDbIterator.rewind();
+        // some code goes here
+    	m_child.rewind();
     }
 
     /**
@@ -66,74 +64,26 @@ public class Filter implements DbIterator {
      * @see Predicate#filter
      */
     protected Tuple fetchNext() throws NoSuchElementException,
-	    TransactionAbortedException, DbException {
-	// check if opened or not
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-
-	// iterate all tuples until find the matched one
-	while (childDbIterator.hasNext()) {
-	    Tuple tuple = childDbIterator.next();
-	    if (predicate.filter(tuple))
-		return tuple;
-	}
-	return null;
+            TransactionAbortedException, DbException {
+        // some code goes here
+    	while(m_child.hasNext()){
+    		Tuple newTuple=m_child.next();
+    		if(m_predicate.filter(newTuple))
+    			return newTuple;
+    	}
+        return null;
     }
 
+    @Override
     public DbIterator[] getChildren() {
-	return new DbIterator[] { childDbIterator };
+        // some code goes here
+        return new DbIterator[] { m_child };
     }
 
-    public void setChildren(final DbIterator[] children) {
-	childDbIterator = children[0];
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#hasNext()
-     */
     @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException {
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-	if (next == null)
-	    next = fetchNext();
-	return next != null;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#next()
-     */
-    @Override
-    public Tuple next() throws DbException, TransactionAbortedException,
-	    NoSuchElementException {
-	if (next == null) {
-	    next = fetchNext();
-	    if (next == null)
-		throw new NoSuchElementException();
-	}
-
-	Tuple result = next;
-	next = null;
-	return result;
-    }
-
-    /**
-     * @return The estimated cardinality of this operator. Will only be used in
-     *         lab6
-     * */
-    public int getEstimatedCardinality() {
-	return estimatedCardinality;
-    }
-
-    /**
-     * @param card
-     *            The estimated cardinality of this operator Will only be used
-     *            in lab6
-     * */
-    protected void setEstimatedCardinality(final int card) {
-	estimatedCardinality = card;
+    public void setChildren(DbIterator[] children) {
+        // some code goes here
+    	m_child=children[0];
     }
 
 }

@@ -1,20 +1,16 @@
 package simpledb;
 
-import java.util.ArrayList;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * Project is an operator that implements a relational projection.
  */
-public class Project implements DbIterator {
+public class Project extends Operator {
 
     private static final long serialVersionUID = 1L;
     private DbIterator child;
-    private final TupleDesc td;
-    private final ArrayList<Integer> outFieldIds;
-    private boolean opened = false;
-    private Tuple next = null;
-    private int estimatedCardinality = 0;
+    private TupleDesc td;
+    private ArrayList<Integer> outFieldIds;
 
     /**
      * Constructor accepts a child operator to read tuples to apply projection
@@ -27,44 +23,41 @@ public class Project implements DbIterator {
      * @param child
      *            The child operator
      */
-    public Project(final ArrayList<Integer> fieldList,
-	    final ArrayList<Type> typesList, final DbIterator child) {
-	this(fieldList, typesList.toArray(new Type[] {}), child);
+    public Project(ArrayList<Integer> fieldList, ArrayList<Type> typesList,
+            DbIterator child) {
+        this(fieldList,typesList.toArray(new Type[]{}),child);
+    }
+    
+    public Project(ArrayList<Integer> fieldList, Type[] types,
+            DbIterator child) {
+        this.child = child;
+        outFieldIds = fieldList;
+        String[] fieldAr = new String[fieldList.size()];
+        TupleDesc childtd = child.getTupleDesc();
+
+        for (int i = 0; i < fieldAr.length; i++) {
+            fieldAr[i] = childtd.getFieldName(fieldList.get(i));
+        }
+        td = new TupleDesc(types, fieldAr);
     }
 
-    public Project(final ArrayList<Integer> fieldList, final Type[] types,
-	    final DbIterator child) {
-	this.child = child;
-	outFieldIds = fieldList;
-	String[] fieldAr = new String[fieldList.size()];
-	TupleDesc childtd = child.getTupleDesc();
-
-	for (int i = 0; i < fieldAr.length; i++)
-	    fieldAr[i] = childtd.getFieldName(fieldList.get(i));
-	td = new TupleDesc(types, fieldAr);
-    }
-
-    @Override
     public TupleDesc getTupleDesc() {
-	return td;
+        return td;
     }
 
-    @Override
     public void open() throws DbException, NoSuchElementException,
-	    TransactionAbortedException {
-	opened = true;
-	child.open();
+            TransactionAbortedException {
+        child.open();
+        super.open();
     }
 
-    @Override
     public void close() {
-	child.close();
-	opened = false;
+        super.close();
+        child.close();
     }
 
-    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-	child.rewind();
+        child.rewind();
     }
 
     /**
@@ -74,72 +67,30 @@ public class Project implements DbIterator {
      * @return The next tuple, or null if there are no more tuples
      */
     protected Tuple fetchNext() throws NoSuchElementException,
-	    TransactionAbortedException, DbException {
-	while (child.hasNext()) {
-	    Tuple t = child.next();
-	    Tuple newTuple = new Tuple(td);
-	    newTuple.setRecordId(t.getRecordId());
-	    for (int i = 0; i < td.numFields(); i++)
-		newTuple.setField(i, t.getField(outFieldIds.get(i)));
-	    return newTuple;
-	}
-	return null;
+            TransactionAbortedException, DbException {
+        while (child.hasNext()) {
+            Tuple t = child.next();
+            Tuple newTuple = new Tuple(td);
+            newTuple.setRecordId(t.getRecordId());
+            for (int i = 0; i < td.numFields(); i++) {
+                newTuple.setField(i, t.getField(outFieldIds.get(i)));
+            }
+            return newTuple;
+        }
+        return null;
     }
 
+    @Override
     public DbIterator[] getChildren() {
-	return new DbIterator[] { child };
+        return new DbIterator[] { this.child };
     }
 
-    public void setChildren(final DbIterator[] children) {
-	if (child != children[0])
-	    child = children[0];
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#hasNext()
-     */
     @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException {
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-	if (next == null)
-	    next = fetchNext();
-	return next != null;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#next()
-     */
-    @Override
-    public Tuple next() throws DbException, TransactionAbortedException,
-	    NoSuchElementException {
-	if (next == null) {
-	    next = fetchNext();
-	    if (next == null)
-		throw new NoSuchElementException();
+    public void setChildren(DbIterator[] children) {
+	if (this.child!=children[0])
+	{
+	    this.child = children[0];
 	}
-
-	Tuple result = next;
-	next = null;
-	return result;
     }
-
-    /**
-     * @return The estimated cardinality of this operator. Will only be used in
-     *         lab6
-     * */
-    public int getEstimatedCardinality() {
-	return estimatedCardinality;
-    }
-
-    /**
-     * @param card
-     *            The estimated cardinality of this operator Will only be used
-     *            in lab6
-     * */
-    protected void setEstimatedCardinality(final int card) {
-	estimatedCardinality = card;
-    }
+    
 }

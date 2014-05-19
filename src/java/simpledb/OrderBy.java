@@ -1,27 +1,20 @@
 package simpledb;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * OrderBy is an operator that implements a relational ORDER BY.
  */
-public class OrderBy implements DbIterator {
+public class OrderBy extends Operator {
 
     private static final long serialVersionUID = 1L;
     private DbIterator child;
-    private final TupleDesc td;
-    private final ArrayList<Tuple> childTups = new ArrayList<Tuple>();
-    private final int orderByField;
-    private final String orderByFieldName;
+    private TupleDesc td;
+    private ArrayList<Tuple> childTups = new ArrayList<Tuple>();
+    private int orderByField;
+    private String orderByFieldName;
     private Iterator<Tuple> it;
-    private final boolean asc;
-    private boolean opened = false;
-    private Tuple next = null;
-    private int estimatedCardinality = 0;
+    private boolean asc;
 
     /**
      * Creates a new OrderBy node over the tuples from the iterator.
@@ -33,53 +26,51 @@ public class OrderBy implements DbIterator {
      * @param child
      *            the tuples to sort.
      */
-    public OrderBy(final int orderbyField, final boolean asc,
-	    final DbIterator child) {
-	this.child = child;
-	td = child.getTupleDesc();
-	orderByField = orderbyField;
-	orderByFieldName = td.getFieldName(orderbyField);
-	this.asc = asc;
+    public OrderBy(int orderbyField, boolean asc, DbIterator child) {
+        this.child = child;
+        td = child.getTupleDesc();
+        this.orderByField = orderbyField;
+        this.orderByFieldName = td.getFieldName(orderbyField);
+        this.asc = asc;
     }
-
-    public boolean isASC() {
-	return asc;
+    
+    public boolean isASC()
+    {
+	return this.asc;
     }
-
-    public int getOrderByField() {
-	return orderByField;
+    
+    public int getOrderByField()
+    {
+        return this.orderByField;
     }
-
-    public String getOrderFieldName() {
-	return orderByFieldName;
+    
+    public String getOrderFieldName()
+    {
+	return this.orderByFieldName;
     }
-
-    @Override
+    
     public TupleDesc getTupleDesc() {
-	return td;
+        return td;
     }
 
-    @Override
     public void open() throws DbException, NoSuchElementException,
-	    TransactionAbortedException {
-	child.open();
-	// load all the tuples in a collection, and sort it
-	while (child.hasNext())
-	    childTups.add(child.next());
-	Collections.sort(childTups, new TupleComparator(orderByField, asc));
-	it = childTups.iterator();
-	opened = true;
+            TransactionAbortedException {
+        child.open();
+        // load all the tuples in a collection, and sort it
+        while (child.hasNext())
+            childTups.add((Tuple) child.next());
+        Collections.sort(childTups, new TupleComparator(orderByField, asc));
+        it = childTups.iterator();
+        super.open();
     }
 
-    @Override
     public void close() {
-	opened = false;
-	it = null;
+        super.close();
+        it = null;
     }
 
-    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-	it = childTups.iterator();
+        it = childTups.iterator();
     }
 
     /**
@@ -90,89 +81,43 @@ public class OrderBy implements DbIterator {
      *         tuples
      */
     protected Tuple fetchNext() throws NoSuchElementException,
-	    TransactionAbortedException, DbException {
-	if (it != null && it.hasNext())
-	    return it.next();
-	else
-	    return null;
+            TransactionAbortedException, DbException {
+        if (it != null && it.hasNext()) {
+            return it.next();
+        } else
+            return null;
     }
 
+    @Override
     public DbIterator[] getChildren() {
-	return new DbIterator[] { child };
+        return new DbIterator[] { this.child };
     }
 
-    public void setChildren(final DbIterator[] children) {
-	child = children[0];
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#hasNext()
-     */
     @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException {
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-	if (next == null)
-	    next = fetchNext();
-	return next != null;
+    public void setChildren(DbIterator[] children) {
+        this.child = children[0];
     }
 
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#next()
-     */
-    @Override
-    public Tuple next() throws DbException, TransactionAbortedException,
-	    NoSuchElementException {
-	if (next == null) {
-	    next = fetchNext();
-	    if (next == null)
-		throw new NoSuchElementException();
-	}
-
-	Tuple result = next;
-	next = null;
-	return result;
-    }
-
-    /**
-     * @return The estimated cardinality of this operator. Will only be used in
-     *         lab6
-     * */
-    public int getEstimatedCardinality() {
-	return estimatedCardinality;
-    }
-
-    /**
-     * @param card
-     *            The estimated cardinality of this operator Will only be used
-     *            in lab6
-     * */
-    protected void setEstimatedCardinality(final int card) {
-	estimatedCardinality = card;
-    }
 }
 
 class TupleComparator implements Comparator<Tuple> {
     int field;
     boolean asc;
 
-    public TupleComparator(final int field, final boolean asc) {
-	this.field = field;
-	this.asc = asc;
+    public TupleComparator(int field, boolean asc) {
+        this.field = field;
+        this.asc = asc;
     }
 
-    @Override
-    public int compare(final Tuple o1, final Tuple o2) {
-	Field t1 = o1.getField(field);
-	Field t2 = o2.getField(field);
-	if (t1.compare(Predicate.Op.EQUALS, t2))
-	    return 0;
-	if (t1.compare(Predicate.Op.GREATER_THAN, t2))
-	    return asc ? 1 : -1;
-	else
-	    return asc ? -1 : 1;
+    public int compare(Tuple o1, Tuple o2) {
+        Field t1 = (o1).getField(field);
+        Field t2 = (o2).getField(field);
+        if (t1.compare(Predicate.Op.EQUALS, t2))
+            return 0;
+        if (t1.compare(Predicate.Op.GREATER_THAN, t2))
+            return asc ? 1 : -1;
+        else
+            return asc ? -1 : 1;
     }
-
+    
 }

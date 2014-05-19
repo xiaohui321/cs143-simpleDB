@@ -1,23 +1,23 @@
 package simpledb;
 
-import java.util.NoSuchElementException;
+import java.util.*;
 
 /**
  * The Aggregation operator that computes an aggregate (e.g., sum, avg, max,
  * min). Note that we only support aggregates over a single column, grouped by a
  * single column.
  */
-public class Aggregate implements DbIterator {
+public class Aggregate extends Operator {
 
     private static final long serialVersionUID = 1L;
-    private boolean opened = false;
-    private DbIterator childDbIterator;
-    private DbIterator aggregateIterator;
-    private final int aggregateFieldInt, groupByFieldInt;
-    private final Aggregator.Op operator;
-    private Aggregator aggregator;
-    private Tuple next = null;
-    private int estimatedCardinality = 0;
+
+    private DbIterator dbIt;
+    private int aField;
+    private int gbField;
+    private Type gbFieldType;
+    private Aggregator.Op aOp;
+    private Aggregator aggItself;			// use to determine whether it's a stringAggregator or an IntegerAggregator
+    private DbIterator resIt;
 
     /**
      * Constructor.
@@ -25,6 +25,7 @@ public class Aggregate implements DbIterator {
      * Implementation hint: depending on the type of afield, you will want to
      * construct an {@link IntAggregator} or {@link StringAggregator} to help
      * you with your implementation of readNext().
+     * 
      * 
      * @param child
      *            The DbIterator that is feeding us tuples.
@@ -36,24 +37,22 @@ public class Aggregate implements DbIterator {
      * @param aop
      *            The aggregation operator to use
      */
-    public Aggregate(final DbIterator child, final int afield,
-	    final int gfield, final Aggregator.Op aop) {
-	childDbIterator = child;
-	aggregateIterator = null;
-	aggregateFieldInt = afield;
-	groupByFieldInt = gfield;
-	operator = aop;
-	Type groupByfieldType = groupByFieldInt == Aggregator.NO_GROUPING ? null
-	        : childDbIterator.getTupleDesc().getFieldType(groupByFieldInt);
-
-	// create aggregator based on type
-	if (childDbIterator.getTupleDesc().getFieldType(aggregateFieldInt) == Type.STRING_TYPE)
-	    aggregator = new StringAggregator(groupByFieldInt,
-		    groupByfieldType, aggregateFieldInt, operator);
-	else
-	    aggregator = new IntegerAggregator(groupByFieldInt,
-		    groupByfieldType, aggregateFieldInt, operator);
-
+    public Aggregate(DbIterator child, int afield, int gfield, Aggregator.Op aop) {
+    		dbIt = child;
+    		aField = afield;
+    		gbField = gfield;
+    		aOp = aop;
+    		if(gbField == Aggregator.NO_GROUPING)
+    			gbFieldType = null;
+    		else
+    			gbFieldType = dbIt.getTupleDesc().getFieldType(gbField);
+    		
+    		if(dbIt.getTupleDesc().getFieldType(aField).equals(Type.INT_TYPE))				// initiate the aggregator to be a strAgg or an intAgg
+    			aggItself = new IntegerAggregator(gbField, gbFieldType, aField, aOp);
+    		else if(dbIt.getTupleDesc().getFieldType(aField).equals(Type.STRING_TYPE))
+    			aggItself = new StringAggregator(gbField, gbFieldType, aField, aOp);
+    		else
+    			throw new IllegalArgumentException("Not a string or int aggregator");
     }
 
     /**
@@ -62,7 +61,7 @@ public class Aggregate implements DbIterator {
      *         {@link simpledb.Aggregator#NO_GROUPING}
      * */
     public int groupField() {
-	return groupByFieldInt;
+    	return gbField;
     }
 
     /**
@@ -71,17 +70,17 @@ public class Aggregate implements DbIterator {
      *         null;
      * */
     public String groupFieldName() {
-	if (groupByFieldInt == Aggregator.NO_GROUPING)
-	    return null;
-	else
-	    return childDbIterator.getTupleDesc().getFieldName(groupByFieldInt);
+    	if(gbField == Aggregator.NO_GROUPING)
+    		return null;
+    	else
+    		return dbIt.getTupleDesc().getFieldName(gbField);
     }
 
     /**
      * @return the aggregate field
      * */
     public int aggregateField() {
-	return aggregateFieldInt;
+    	return aField;
     }
 
     /**
@@ -89,30 +88,30 @@ public class Aggregate implements DbIterator {
      *         tuples
      * */
     public String aggregateFieldName() {
-	return childDbIterator.getTupleDesc().getFieldName(aggregateFieldInt);
+    	return dbIt.getTupleDesc().getFieldName(aField);
     }
 
     /**
      * @return return the aggregate operator
      * */
     public Aggregator.Op aggregateOp() {
-	return operator;
+    	return aOp;
     }
 
-    public static String nameOfAggregatorOp(final Aggregator.Op aop) {
+    public static String nameOfAggregatorOp(Aggregator.Op aop) {
 	return aop.toString();
     }
-
-    @Override
+    
     public void open() throws NoSuchElementException, DbException,
-	    TransactionAbortedException {
-	opened = true;
-	childDbIterator.open();
-	while (childDbIterator.hasNext())
-	    aggregator.mergeTupleIntoGroup(childDbIterator.next());
-	aggregateIterator = aggregator.iterator();
-	aggregateIterator.open();
-    }
+    TransactionAbortedException {
+	super.open();
+	dbIt.open();
+	while (dbIt.hasNext()) {
+		aggItself.mergeTupleIntoGroup(dbIt.next());
+	}
+	resIt = aggItself.iterator();
+	resIt.open();
+}
 
     /**
      * Returns the next tuple. If there is a group by field, then the first
@@ -122,25 +121,17 @@ public class Aggregate implements DbIterator {
      * aggregate. Should return null if there are no more tuples.
      */
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
-	// check open satatus
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-
-	// sanity check
-	if (aggregateIterator == null)
-	    throw new DbException("open() not called yet");
-
-	if (aggregateIterator.hasNext())
-	    return aggregateIterator.next();
-	else
-	    return null;
-
+		if(resIt == null)
+			throw new DbException("");
+		if(resIt.hasNext())
+			return resIt.next();
+		return null;
+		
     }
 
-    @Override
     public void rewind() throws DbException, TransactionAbortedException {
-	childDbIterator.rewind();
-	aggregateIterator.rewind();
+    	dbIt.rewind();
+    	resIt.rewind();
     }
 
     /**
@@ -154,101 +145,46 @@ public class Aggregate implements DbIterator {
      * given in the constructor, and child_td is the TupleDesc of the child
      * iterator.
      */
-    @Override
     public TupleDesc getTupleDesc() {
-	if (aggregateFieldInt == Aggregator.NO_GROUPING) {
-	    Type[] type = new Type[] { childDbIterator.getTupleDesc()
-		    .getFieldType(aggregateFieldInt) };
-
-	    String[] name = new String[] { operator.toString()
-		    + "("
-		    + childDbIterator.getTupleDesc().getFieldName(
-		            aggregateFieldInt) + ")" };
-
-	    return new TupleDesc(type, name);
-	} else {
-	    Type[] type = new Type[] {
-		    childDbIterator.getTupleDesc()
-		            .getFieldType(groupByFieldInt),
-		    childDbIterator.getTupleDesc().getFieldType(
-		            aggregateFieldInt) };
-
-	    String[] name = new String[] {
-		    childDbIterator.getTupleDesc()
-		            .getFieldName(groupByFieldInt),
-		    operator.toString()
-		            + "("
-		            + childDbIterator.getTupleDesc().getFieldName(
-		                    aggregateFieldInt) + ")" };
-	    return new TupleDesc(type, name);
-	}
-
+    	TupleDesc td = null;
+    	Type[] types;
+    	String[] fields;
+    	String aggregateName = aOp.toString() 
+    							+ "(" 
+    							+ dbIt.getTupleDesc().getFieldName(aggregateField()) 
+    							+ ")";
+    	if (groupField() == Aggregator.NO_GROUPING) {
+    		//only one field = aggregate column
+    		types = new Type[] {dbIt.getTupleDesc().getFieldType(aggregateField())};
+    		fields = new String[] {aggregateName};
+    		td = new TupleDesc(types, fields);
+    	}
+    	else {
+    		types = new Type[] {dbIt.getTupleDesc().getFieldType(groupField()),
+    				dbIt.getTupleDesc().getFieldType(aggregateField())};
+    		fields = new String[] {groupFieldName(), aggregateName};
+    		td = new TupleDesc(types, fields);
+    	}
+    	return td;
     }
 
-    @Override
     public void close() {
-	opened = false;
-	childDbIterator.close();
-	aggregateIterator.close();
+	    super.close();
+    	dbIt.close();
+    	resIt.close();
     }
 
+    @Override
     public DbIterator[] getChildren() {
-	return new DbIterator[] { childDbIterator };
+	    if(dbIt == null)
+    		return null;
+    	else
+    		return new DbIterator[] {dbIt};
     }
 
-    public void setChildren(final DbIterator[] children) {
-	childDbIterator = children[0];
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#hasNext()
-     */
     @Override
-    public boolean hasNext() throws DbException, TransactionAbortedException {
-	// check open status
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-
-	if (next == null)
-	    next = fetchNext();
-	return next != null;
-    }
-
-    /*
-     * (non-Javadoc)
-     * @see simpledb.DbIterator#next()
-     */
-    @Override
-    public Tuple next() throws DbException, TransactionAbortedException,
-	    NoSuchElementException {
-	if (!opened)
-	    throw new IllegalStateException("Operator not yet open");
-	if (next == null) {
-	    next = fetchNext();
-	    if (next == null)
-		throw new NoSuchElementException();
+    public void setChildren(DbIterator[] children) {
+    	dbIt = children[0];
 	}
-
-	Tuple result = next;
-	next = null;
-	return result;
-    }
-
-    /**
-     * @return The estimated cardinality of this operator. Will only be used in
-     *         lab6
-     * */
-    public int getEstimatedCardinality() {
-	return estimatedCardinality;
-    }
-
-    /**
-     * @param card
-     *            The estimated cardinality of this operator Will only be used
-     *            in lab6
-     * */
-    protected void setEstimatedCardinality(final int card) {
-	estimatedCardinality = card;
-    }
+    
 }
