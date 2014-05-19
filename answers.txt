@@ -1,7 +1,7 @@
 ==============================
 	UCLA CS143 
 	Spring 2014
-	HOMEWORK 2
+	HOMEWORK 3
 ==============================
 
 AUTHORS
@@ -24,10 +24,16 @@ LAB2:
 1. Page eviction policy: LRU
 2. We removed the abstract class "operator" and all the classes which
    "extends operator" are changed to "implements DbIterator".
+--------------------------------------------------------------------------------
+LAB3:
+
 
 CHANGES TO THE API
 ==================
-Removed "operator".
+LAB2: Removed "operator".
+--------------------------------------------------------------------------------
+LAB3: Because the supplement code for lab3 is dependent on operator class, the 
+solution provided for lab 2 is used.
 
 MISSING OR INCOMPLETE ELEMENTS
 ==============================
@@ -38,6 +44,7 @@ TIME SPENT ON THIS PROJECT:
 ==========================
 LAB1:	Approximately 10 hours
 LAB2:   Approximately 15 hours
+LAB3: 	
 
 DIFFICULTIES OR CONFUSING PARTS
 ===============================	

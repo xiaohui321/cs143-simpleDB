@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TableStats represents statistics (e.g., histograms) about base tables in a
- * query. 
+ * query.
  * 
  * This class is not needed in implementing lab1 and lab2.
  */
@@ -17,46 +17,51 @@ public class TableStats {
 
     static final int IOCOSTPERPAGE = 1000;
 
-    public static TableStats getTableStats(String tablename) {
-        return statsMap.get(tablename);
+    public static TableStats getTableStats(final String tablename) {
+	return statsMap.get(tablename);
     }
 
-    public static void setTableStats(String tablename, TableStats stats) {
-        statsMap.put(tablename, stats);
+    public static void setTableStats(final String tablename,
+	    final TableStats stats) {
+	statsMap.put(tablename, stats);
     }
-    
-    public static void setStatsMap(HashMap<String,TableStats> s)
-    {
-        try {
-            java.lang.reflect.Field statsMapF = TableStats.class.getDeclaredField("statsMap");
-            statsMapF.setAccessible(true);
-            statsMapF.set(null, s);
-        } catch (NoSuchFieldException e) {
-            e.printStackTrace();
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
+
+    public static void setStatsMap(final HashMap<String, TableStats> s) {
+	try {
+	    java.lang.reflect.Field statsMapF = TableStats.class
+		    .getDeclaredField("statsMap");
+	    statsMapF.setAccessible(true);
+	    statsMapF.set(null, s);
+	}
+	catch (NoSuchFieldException e) {
+	    e.printStackTrace();
+	}
+	catch (SecurityException e) {
+	    e.printStackTrace();
+	}
+	catch (IllegalArgumentException e) {
+	    e.printStackTrace();
+	}
+	catch (IllegalAccessException e) {
+	    e.printStackTrace();
+	}
 
     }
 
     public static Map<String, TableStats> getStatsMap() {
-        return statsMap;
+	return statsMap;
     }
 
     public static void computeStatistics() {
-        Iterator<Integer> tableIt = Database.getCatalog().tableIdIterator();
+	Iterator<Integer> tableIt = Database.getCatalog().tableIdIterator();
 
-        System.out.println("Computing table stats.");
-        while (tableIt.hasNext()) {
-            int tableid = tableIt.next();
-            TableStats s = new TableStats(tableid, IOCOSTPERPAGE);
-            setTableStats(Database.getCatalog().getTableName(tableid), s);
-        }
-        System.out.println("Done.");
+	System.out.println("Computing table stats.");
+	while (tableIt.hasNext()) {
+	    int tableid = tableIt.next();
+	    TableStats s = new TableStats(tableid, IOCOSTPERPAGE);
+	    setTableStats(Database.getCatalog().getTableName(tableid), s);
+	}
+	System.out.println("Done.");
     }
 
     /**
@@ -76,15 +81,15 @@ public class TableStats {
      *            The cost per page of IO. This doesn't differentiate between
      *            sequential-scan IO and disk seeks.
      */
-    public TableStats(int tableid, int ioCostPerPage) {
-        // For this function, you'll have to get the
-        // DbFile for the table in question,
-        // then scan through its tuples and calculate
-        // the values that you need.
-        // You should try to do this reasonably efficiently, but you don't
-        // necessarily have to (for example) do everything
-        // in a single scan of the table.
-        // some code goes here
+    public TableStats(final int tableid, final int ioCostPerPage) {
+	// For this function, you'll have to get the
+	// DbFile for the table in question,
+	// then scan through its tuples and calculate
+	// the values that you need.
+	// You should try to do this reasonably efficiently, but you don't
+	// necessarily have to (for example) do everything
+	// in a single scan of the table.
+	// some code goes here
     }
 
     /**
@@ -100,8 +105,8 @@ public class TableStats {
      * @return The estimated cost of scanning the table.
      */
     public double estimateScanCost() {
-        // some code goes here
-        return 0;
+	// some code goes here
+	return 0;
     }
 
     /**
@@ -113,24 +118,25 @@ public class TableStats {
      * @return The estimated cardinality of the scan with the specified
      *         selectivityFactor
      */
-    public int estimateTableCardinality(double selectivityFactor) {
-        // some code goes here
-        return 0;
+    public int estimateTableCardinality(final double selectivityFactor) {
+	// some code goes here
+	return 0;
     }
 
     /**
      * The average selectivity of the field under op.
+     * 
      * @param field
-     *        the index of the field
+     *            the index of the field
      * @param op
-     *        the operator in the predicate
-     * The semantic of the method is that, given the table, and then given a
-     * tuple, of which we do not know the value of the field, return the
-     * expected selectivity. You may estimate this value from the histograms.
+     *            the operator in the predicate The semantic of the method is
+     *            that, given the table, and then given a tuple, of which we do
+     *            not know the value of the field, return the expected
+     *            selectivity. You may estimate this value from the histograms.
      * */
-    public double avgSelectivity(int field, Predicate.Op op) {
-        // some code goes here
-        return 1.0;
+    public double avgSelectivity(final int field, final Predicate.Op op) {
+	// some code goes here
+	return 1.0;
     }
 
     /**
@@ -146,17 +152,28 @@ public class TableStats {
      * @return The estimated selectivity (fraction of tuples that satisfy) the
      *         predicate
      */
-    public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
-        // some code goes here
-        return 1.0;
+    public double estimateSelectivity(final int field, final Predicate.Op op,
+	    final Field constant) {
+	// some code goes here
+	return 1.0;
+	/*
+	 * Total cost: scancost(t1) + scancost(t2) + joincost(t1 join t2) +
+	 * scancost(t3) + joincost((t1 join t2) join t3) + ... scan cost: I/O
+	 * cost of scanning table join cost: CPU cost to join t1 and t2
+	 * scancost(t1) = #page in t1 * SCALING_FACTOR joincost(t1,t2) =
+	 * scancost(t1) + ntups(t1) x scancost(t2) //IO cost + ntups(t1) x
+	 * ntups(t2) //CPU cost Here, ntups(t1) is the number of tuples in table
+	 * t1.
+	 */
+
     }
 
     /**
      * return the total number of tuples in this table
      * */
     public int totalTuples() {
-        // some code goes here
-        return 0;
+	// some code goes here
+	return 0;
     }
 
 }
