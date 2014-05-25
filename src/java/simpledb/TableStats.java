@@ -102,14 +102,6 @@ public class TableStats {
      *            sequential-scan IO and disk seeks.
      */
     public TableStats(final int tableid, final int ioCostPerPage) {
-	// For this function, you'll have to get the
-	// DbFile for the table in question,
-	// then scan through its tuples and calculate
-	// the values that you need.
-	// You should try to do this reasonably efficiently, but you don't
-	// necessarily have to (for example) do everything
-	// in a single scan of the table.
-	// TODO: some code goes here
 	databaseFile = simpledb.Database.getCatalog().getDatabaseFile(tableid);
 	this.tableid = tableid;
 	this.ioCostPerPage = ioCostPerPage;
@@ -127,7 +119,10 @@ public class TableStats {
 	    while (iterator.hasNext()) {
 		Tuple tuple = iterator.next();
 		for (int i = 0; i < td.numFields(); i++) {
-		    IntField f = (IntField) tuple.getField(i);
+		    Field field = tuple.getField(i);
+		    if (field instanceof StringField)
+			continue;
+		    IntField f = (IntField) field;
 		    String name = td.getFieldName(i);
 		    int v = f.getValue();
 		    if (f.getType().equals(Type.INT_TYPE)) {
@@ -174,9 +169,13 @@ public class TableStats {
 		}
 	    }
 	}
-	catch (DbException | TransactionAbortedException e) {
+	catch (DbException e) {
 	    e.printStackTrace();
 	}
+	catch (TransactionAbortedException e) {
+	    e.printStackTrace();
+	}
+
 	finally {
 	    iterator.close();
 	}
@@ -194,7 +193,6 @@ public class TableStats {
      *            selectivity. You may estimate this value from the histograms.
      * */
     public double avgSelectivity(final int field, final Predicate.Op op) {
-	// TODO: some code goes here
 	return 1.0;
     }
 
