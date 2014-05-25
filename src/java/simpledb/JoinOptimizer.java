@@ -13,7 +13,7 @@ import javax.swing.tree.*;
 public class JoinOptimizer {
     LogicalPlan p;
     Vector<LogicalJoinNode> joins;
-
+    PlanCache pc;
     /**
      * Constructor
      * 
@@ -25,6 +25,7 @@ public class JoinOptimizer {
     public JoinOptimizer(LogicalPlan p, Vector<LogicalJoinNode> joins) {
         this.p = p;
         this.joins = joins;
+        this.pc = new PlanCache();
     }
 
     /**
@@ -111,7 +112,7 @@ public class JoinOptimizer {
             // HINT: You may need to use the variable "j" if you implemented
             // a join algorithm that's more complicated than a basic nested-loops
             // join.
-            return -1.0;
+            return cost1+(card1*cost2)+(card1*card2);
         }
     }
 
@@ -154,9 +155,24 @@ public class JoinOptimizer {
             String field2PureName, int card1, int card2, boolean t1pkey,
             boolean t2pkey, Map<String, TableStats> stats,
             Map<String, Integer> tableAliasToId) {
-        int card = 1;
-        // some code goes here
-        return card <= 0 ? 1 : card;
+        switch (joinOp) {
+        	case NOT_EQUALS:
+        	case EQUALS:
+        	{
+        		if (t1pkey) return card2;
+        		if (t2pkey) return card1;
+        		if (card1 > card2) return card1;
+        			return card2;
+        	}
+        	case GREATER_THAN:
+        	case GREATER_THAN_OR_EQ:
+        	case LESS_THAN:
+        	case LESS_THAN_OR_EQ:
+        	case LIKE:
+        		// It is fine to assume that a fixed fraction of the cross-product is emitted by range scans (say, 30%)
+        		return (int)((card1 * card2) * 0.3);
+        }
+        return 0;
     }
 
     /**
@@ -217,12 +233,42 @@ public class JoinOptimizer {
             HashMap<String, Double> filterSelectivities, boolean explain)
             throws ParsingException {
 
-        // See the project writeup for some hints as to how this function
-        // should work.
+    	// Psudo-code for orderJoins
+    	//	j = set of join nodes
+    	//  for (i in 1...|j|):
+    	//		for s in {all length i subsets of j}
+    	//			bestPlan = {}
+    	//			for s' in {all length d-1 subsets of s}
+    	//				subplan = optjoin(s')
+    	//				plan = best way to join (s-s') to subplan
+    	//				if (cost(plan) < cost(bestPlan))
+    	//					bestPlan = plan
+    	//			optjoin(s) = bestPlan
+    	// return optjoin(j)
+    	    
+    	for(int i=1; i <= joins.size(); i++){
+    		for(Set<LogicalJoinNode> subsetJoinNode: this.enumerateSubsets(joins, i)){
+    			CostCard bestPlan = new CostCard();
+    			bestPlan.cost = Double.MAX_VALUE;
+    			
+    			for(LogicalJoinNode joinNode: subsetJoinNode){
+    				CostCard plan = this.computeCostAndCardOfSubplan(stats, filterSelectivities, joinNode, subsetJoinNode, bestPlan.cost, pc);
+    				if(plan != null) // computeCostAndCardOfSubplan may return null, if no plan can be found
+    					if(plan.cost < bestPlan.cost)
+    						bestPlan = plan;
 
-        // some code goes here
-        //Replace the following
-        return joins;
+    			pc.addPlan(subsetJoinNode, bestPlan.cost, bestPlan.card, bestPlan.plan);	
+    			}
+    		}
+    	}
+    	
+    	// If need to print out the join structure
+    	if(explain){
+    		this.printJoins(joins, pc, stats, filterSelectivities);
+    	}
+    	
+    	// return the bestPlan for given set
+        return pc.getOrder(new HashSet<LogicalJoinNode>(joins));
     }
 
     // ===================== Private Methods =================================
