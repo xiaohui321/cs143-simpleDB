@@ -36,8 +36,15 @@ public class IntHistogram {
     public IntHistogram(final int buckets, final int min, final int max) {
 	this.max = max;
 	this.min = min;
-	num_buckets = buckets;
-	bucket_width = (double) (max - min) / num_buckets;
+
+	if (max - min < buckets) {
+	    bucket_width = 1;
+	    num_buckets = max - min;
+	} else {
+	    num_buckets = buckets;
+	    bucket_width = (double) (max - min) / num_buckets;
+	}
+
 	this.buckets = new int[num_buckets];
 	total_num_values = 0;
     }
@@ -82,45 +89,63 @@ public class IntHistogram {
      */
     public double estimateSelectivity(final Predicate.Op op, final int v) {
 	int index = calculateIndex(v);
-
+	double return_value;
 	double b_right, b_left, count;
 	switch (op) {
 	    case EQUALS:
-		return buckets[index] / bucket_width / total_num_values;
-
+		if (v > max || v < min)
+		    return_value = 0;
+		else
+		    return_value = buckets[index] / bucket_width
+		    / total_num_values;
+		break;
 	    case NOT_EQUALS:
-		return 1 - buckets[index] / bucket_width / total_num_values;
-
+		return 1 - estimateSelectivity(Predicate.Op.EQUALS, v);
 	    case GREATER_THAN:
 		b_right = min + (index + 1) * bucket_width;
 		count = buckets[index] * (b_right - v) / bucket_width;
 		for (int i = index + 1; i < num_buckets; i++)
 		    count += buckets[i];
-		return count / total_num_values;
-
+		return_value = count / total_num_values;
+		if (v >= max)
+		    return_value = 0;
+		break;
 	    case GREATER_THAN_OR_EQ:
 		b_right = min + (index + 1) * bucket_width;
 		count = buckets[index] * (b_right - v + 1) / bucket_width;
 		for (int i = index + 1; i < num_buckets; i++)
 		    count += buckets[i];
-		return count / total_num_values;
-
+		return_value = count / total_num_values;
+		if (v >= max)
+		    return_value = 0;
+		break;
 	    case LESS_THAN:
 		b_left = min + index * bucket_width;
 		count = buckets[index] * (v - b_left) / bucket_width;
 		for (int i = 0; i < index; i++)
 		    count += buckets[i];
-		return count / total_num_values;
-
+		return_value = count / total_num_values;
+		if (v <= min)
+		    return_value = 0;
+		break;
 	    case LESS_THAN_OR_EQ:
 		b_left = min + index * bucket_width;
 		count = buckets[index] * (v - b_left + 1) / bucket_width;
 		for (int i = 0; i < index; i++)
 		    count += buckets[i];
-		return count / total_num_values;
+		return_value = count / total_num_values;
+		if (v <= min)
+		    return_value = 0;
+		break;
 	    default:
 		return -1;
 	}
+	if (return_value > 1)
+	    return 1;
+	else if (return_value < 0)
+	    return 0;
+	else
+	    return return_value;
     }
 
     /**
@@ -144,6 +169,6 @@ public class IntHistogram {
 	for (int i = 0; i < num_buckets; i++)
 	    values += buckets[i];
 	return "(There are " + num_buckets + " buckets from " + max + " to "
-	        + min + "and the value for each buckets are: " + values + ")";
+	+ min + "and the value for each buckets are: " + values + ")";
     }
 }

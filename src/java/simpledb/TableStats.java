@@ -217,13 +217,15 @@ public class TableStats {
 	if (fieldType.equals(Type.INT_TYPE)) {
 	    IntHistogram intHistogram = intHistograms.get(td
 		    .getFieldName(field));
-	    return intHistogram.estimateSelectivity(op,
+	    double value = intHistogram.estimateSelectivity(op,
 		    ((IntField) constant).getValue());
+	    return value;
 	} else {// String Type
 	    StringHistogram stringHistogram = stringHistograms.get(td
 		    .getFieldName(field));
-	    return stringHistogram.estimateSelectivity(op,
+	    double value = stringHistogram.estimateSelectivity(op,
 		    ((StringField) constant).getValue());
+	    return value;
 	}
     }
 
