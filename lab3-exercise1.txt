@@ -1,0 +1,52 @@
+================================================================================
+========================================
+		CS 143 Lab3 Exercise 1
+		    Life of a query
+========================================	
+
+Sequence of methods that are invoked and their functions:
+=========================================================
+1.	Parser.main() and Parser.start()
+		main() is the entry point for the SimpleDB system.  It calls start(). 
+		The latter performs three main actions:
+		1.	It populates the catalog from catalog file provided by the user
+			(Database.getCatalog().loadSchema(argv[0]);)
+		2.	For each table, it computes statistics over the data in the table by
+			calling TableStats.computeStatistics(), which for each table does: 
+			TableStats s = new TableStats(tableid, IOCOSTPERPAGE);
+		3. 	It processes the statements submitted by the user
+			(processNextStatement(new ByteArrayInputStream(statementBytes));)
+
+2.	Parser.processNextStatement()
+		1.	It gets a physical plan for the query by invoking 
+			handleQueryStatement((ZQuery)s);
+		2.	it executes the query by calling query.execute();
+
+3. 	Parser.handleQueryStatement()
+		1.	It first parse a logical plan by calling:
+			LogicalPlan lp = parseQueryLogicalPlan(tId, s);
+		2. 	Then it gets a DbIterator physical plan by calling 
+			DbIterator physicalPlan = lp.physicalPlan(...);
+		Then it saves these two plans into a query object.
+		
+4. 	Parser.parseQueryLogicalPlan()
+		1. 	Parse "FROM" clause and check alias for each element, then add 
+			them into scan by calling  lp.addScan(id, name);
+		2.	Parse "WHERE" clause and create FIlter and join nodes as needed
+			by creating ZExpression and calling processExpression(tid, wx, lp);
+		3. 	Parse "GROUP BY" clause and store its value
+		4.	Parse "Select" list including aggregates
+		5.  	Parse "ORDER BY" and add it into this plan
+
+5.	LogicalPlan.physicalPlan()
+		Convert a logical plan into a physical plan represented by a DbIterator,
+		and attempt to find a optimal plan by using JoinOptimizer to arrange joins
+		1. 	For each table in the plan, add its name and table stats into a statsMap
+		2.	For each filter node, get its tupleDesc, field and add into subPlanMap
+			and calculate estimate selectivity by calling estimateSelectivity()
+		3.	Create a joinOptimizer and calling orderJoins() to compute an efficient 
+			way to join. Then, for each join node, update each pair of tables by 
+			removing every second tables in subPlanMap and mark them as equivalent 
+		4.	walk the select list to determine order in which to project output fields.
+		5.	If the query has aggregate, then add aggregate node.
+		6.	If the query has order by, add order by node. 

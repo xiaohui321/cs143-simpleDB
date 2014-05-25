@@ -100,11 +100,9 @@ public class StringField implements Field {
 
 		case LIKE:
 			return value.indexOf(iVal.value) >= 0;
-		
-		default:
-			return false;
 		}
 
+		return false;
 	}
 
 	/**
